@@ -12,19 +12,19 @@ library(lumiHumanAll.db)
 library(affy)
 
 ### Initial info
-studies <- read.table("studies.tsv", header = TRUE, sep = "\t")
-genes_common <- read.table("expression_data/common_genes.txt", header = FALSE, sep = "\t")
+studies <- read.table("../pdata/studies.tsv", header = TRUE, sep = "\t")
+genes_common <- read.table("../expression_data/common_genes.txt", header = FALSE, sep = "\t")
 
 ### RNA-seq data
-rnaseqExprs <- read.table("expression_data/rnaseq_data_processed_sum.tsv", sep="\t", header=TRUE)
+rnaseqExprs <- read.table("../expression_data/rnaseq_data_processed_sum.tsv", sep="\t", header=TRUE)
 
 ### Brainarray
 pipe_type <- "brainarray"
 ind <- which(grepl("Affy", studies$platform))
 # Reading phenodata
-pdata <-read.table(paste("pdata/pdata_", studies[1,]$ID, ".txt", sep=""), header=TRUE, sep="\t")
+pdata <-read.table(paste("../pdata/pdata_", studies[1,]$ID, ".txt", sep=""), header=TRUE, sep="\t")
 # Reading expression data
-eset<-read.table(paste("expression_data/", studies[1,]$ID, "_", pipe_type, ".txt", sep=""), header=TRUE)
+eset<-read.table(paste("../expression_data/", studies[1,]$ID, "_", pipe_type, ".txt", sep=""), header=TRUE)
 # List of probesets IDs
 probesetsID<-rownames(eset)
 # List of corresponding gene IDs
@@ -68,7 +68,7 @@ loess_fit <- loess(rnaseqExprs$val~eset$val)
 nls_fit <- nls(rnaseqExprs$val ~ a + b * eset$val^(-c), start = list(a = 80, b = 20, c = 0.2))
 lines(predict(nls_fit), col="blue")
 
-dev.copy(pdf,paste(studies[1,]$ID, '_scatter_brain_sum_loess.pdf', sep=""))
+dev.copy(pdf,paste("../plots/", studies[1,]$ID, "_scatter_brain_sum_loess.pdf", sep=""))
 dev.off()
 
 # Test for linearity
