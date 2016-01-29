@@ -21,15 +21,16 @@ rnaseqExprs <- read.table("../expression_data/rnaseq_data_processed_sum.tsv", se
 ### Brainarray
 pipe_type <- "brainarray"
 ind <- which(grepl("Affy", studies$platform))
+i = 2
 # Reading phenodata
-pdata <-read.table(paste("../pdata/pdata_", studies[1,]$ID, ".txt", sep=""), header=TRUE, sep="\t")
+pdata <-read.table(paste("../pdata/pdata_", studies[ind[i],]$ID, ".txt", sep=""), header=TRUE, sep="\t")
 # Reading expression data
-eset<-read.table(paste("../expression_data/", studies[1,]$ID, "_", pipe_type, ".txt", sep=""), header=TRUE)
+eset<-read.table(paste("../expression_data/", studies[ind[i],]$ID, "_", pipe_type, ".txt", sep=""), header=TRUE)
 # List of probesets IDs
 probesetsID<-rownames(eset)
 # List of corresponding gene IDs
 detach("package:MASS", unload=TRUE)
-probesetsID_EntrezID<-select(get(paste(studies[1,]$platformAbbr, "hsentrezg.db", sep="")), probesetsID, "ENTREZID")
+probesetsID_EntrezID<-select(get(paste(studies[ind[i],]$platformAbbr, "hsentrezg.db", sep="")), probesetsID, "ENTREZID")
 # Replace probesetsIDs with gene IDs in expression data matrix
 eset <- eset[which(probesetsID_EntrezID$ENTREZID!="NA"),]
 rownames(eset) <- probesetsID_EntrezID$ENTREZID[which(probesetsID_EntrezID$ENTREZID!="NA")]
@@ -50,34 +51,38 @@ rownames(rnaseqExprs) <- rownames(eset)
 library("MASS")
 library(RColorBrewer)
 library(lmtest)
+library(stats)
 k <- 11
 my.cols <- rev(brewer.pal(k, "RdYlBu"))
 z <- kde2d(eset$val, rnaseqExprs$val, n=50)
-plot(eset$val,rnaseqExprs$val, xlab="Probeset intensity", ylab="log2 FPKM", main=paste(studies$ID[1],pipe_type),pch="*", cex=.4)
+plot(eset$val,rnaseqExprs$val, xlab="Probeset intensity", ylab="log2 FPKM", main=paste(studies$ID[ind[i]],pipe_type),pch="*", cex=.4)
 contour(z, drawlabels=FALSE, nlevels=k, col=my.cols, add=TRUE)
 abline(h=median(rnaseqExprs$val), v=median(eset$val), lwd=1)
 # Fit linear model:
-lm_exprs<-lm(rnaseqExprs$val~eset$val)
+lm_exprs<-lm(rnaseqExprs$val~eset$val+I(eset$val^2)+I(eset$val^3))
 sumry_lm<-summary(lm_exprs)
 value_add<-sumry_lm$r.squared
-abline(lm_exprs,col="red")
+index <- order(eset$val)
+lines(eset$val[index], predict(lm_exprs)[index], col="red")
 n=min(eset$val)+1
 text(n,8,paste("R=",round(value_add,digits = 3),sep="",collapse = ""),col="red",font=2)
-# Non-linear fits
-loess_fit <- loess(rnaseqExprs$val~eset$val)
-nls_fit <- nls(rnaseqExprs$val ~ a + b * eset$val^(-c), start = list(a = 80, b = 20, c = 0.2))
-lines(predict(nls_fit), col="blue")
+# Fit non-linear model
+#loess_fit <- loess(rnaseqExprs$val~eset$val)
+#lines(eset$val[index], predict(loess_fit)[index], col="blue")
 
-dev.copy(pdf,paste("../plots/", studies[1,]$ID, "_scatter_brain_sum_loess.pdf", sep=""))
+dev.copy(pdf,paste("../plots/", studies[ind[i],]$ID, "_scatter_brain_sum_quadr.pdf", sep=""))
 dev.off()
 
 # Test for linearity
 model1<-lm(rnaseqExprs$val~eset$val)
-model2<-lm(rnaseqExprs$val~eset$val+I(rnaseqExprs$val)^2)
-anova(model1,model2)
+model2<-lm(rnaseqExprs$val~eset$val+I(eset$val^2)+I(eset$val^3))
+pvalue <- anova(model1, model2)$"Pr(>F)"
+pvalue
+stats:::plot.lm(model1)
+stats:::plot.lm(model2)
 
 # Another test for linearity
-resettest(rnaseqExprs$val~eset$val, power=2, type="regressor")
+resettest(rnaseqExprs$val~eset$val, power=3, type="regressor")
 
-# White's test for heteroscedisity
+# Breusch-Pagan test against heteroskedasticity
 bptest(lm_exprs)
