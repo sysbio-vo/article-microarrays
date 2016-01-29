@@ -77,6 +77,7 @@ dev.off()
 model1<-lm(rnaseqExprs$val~eset$val)
 model2<-lm(rnaseqExprs$val~eset$val+I(eset$val^2)+I(eset$val^3))
 pvalue <- anova(model1, model2)$"Pr(>F)"
+a <- anova(model1, model2)
 pvalue
 stats:::plot.lm(model1)
 stats:::plot.lm(model2)
@@ -85,4 +86,22 @@ stats:::plot.lm(model2)
 resettest(rnaseqExprs$val~eset$val, power=3, type="regressor")
 
 # Breusch-Pagan test against heteroskedasticity
-bptest(lm_exprs)
+bptest(model1)
+
+## From the car package
+# Evaluate homoscedasticity
+# non-constant error variance test
+library(car)
+ncvTest(model1)
+# plot studentized residuals vs. fitted values
+spreadLevelPlot(model1)
+# Evaluate Nonlinearity
+# component + residual plot
+crPlots(model1)
+# Ceres plots
+ceresPlots(model2)
+
+# Global test of model assumptions
+library(gvlma)
+gvmodel <- gvlma(model1)
+summary(gvmodel)
