@@ -22,50 +22,30 @@ for (i in affy) {
   pipelines <- c(pipelines, new("pipeline", name=pipe_type, dataset=dataset))
 }
 
-ind = 1
+ind = 3
 eset <- pipelines[[ind]]@dataset@exprs$eset
 rnaseq <- pipelines[[ind]]@dataset@exprs$rnaseq
 
 # Fit linear and polynomial functions:
 lin<-lm(rnaseq~eset)
 quad<-lm(rnaseq~eset+I(eset^2)+I(eset^3))
-
-# Scatter plot
-k <- 11
-my.cols <- rev(brewer.pal(k, "RdYlBu"))
-z <- kde2d(eset, rnaseq, n=50)
-plot(eset, rnaseq, xlab="log2 probeset intensity", ylab="log2 FPKM", main=paste(studies$ID[affy[ind]],pipe_type),pch="*", cex=.4)
-contour(z, drawlabels=FALSE, nlevels=k, col=my.cols, add=TRUE)
-# Draw medians
-abline(h=median(rnaseq), v=median(eset), lwd=1)
-# Draw regression lines
 r_lin <- summary(lin)$r.squared
 r_quad <- summary(quad)$r.squared
-index <- order(eset)
-lines(eset[index], predict(lin)[index], col="red", lwd=2)
-lines(eset[index], predict(quad)[index], col="blue", lwd=2)
-n=min(eset)+1
-m=max(eset)-1
-text(n, 8, paste("R=",round(r_lin, digits = 3),sep="",collapse = ""),col="red",font=2)
-text(m, 8, paste("R=",round(r_quad, digits = 3),sep="",collapse = ""),col="blue",font=2)
-
 # Fit non-linear model
 #loess_fit <- loess(rnaseqExprs$val~eset$val)
 #lines(eset$val[index], predict(loess_fit)[index], col="blue")
 
-dev.copy(pdf, paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_scatterplot_", pipe_type,".pdf", sep=""))
-dev.off()
-
-# ggplot2
+# Scatter plot
 library(ggplot2)
+df <- data.frame(x=eset, y=rnaseq)
 commonTheme = list(labs(x="log2 probeset intensity",
                         y="log2 FPKM", size=16),
                    theme_bw()+
                    theme(legend.position="none",
                          axis.text = element_text(size=18),
-                         axis.title = element_text(size=16)))
+                         axis.title = element_text(size=16),
+                         plot.title = element_text(face="bold", size=22)))
 
-df <- data.frame(x=eset, y=rnaseq)
 ggplot(data=df,aes(x,y)) + 
   geom_point(alpha=0.3) +
   stat_density2d(aes(fill=..level..,alpha=..level..),geom='polygon',colour='black', alpha=0.5) + 
@@ -78,8 +58,11 @@ ggplot(data=df,aes(x,y)) +
   annotate("text", x=min(df$x)+1, y=max(df$y)-1, label=paste("R=",round(r_quad, digits = 3)), color="blue", size=6) +
   scale_x_continuous(breaks = trunc(seq(trunc(min(df$x)), max(df$x), by = 2), 1)) +
   scale_y_continuous(breaks = trunc(seq(trunc(min(df$y)), max(df$y), by = 2), 1)) +  
+  ggtitle(paste(studies$ID[affy[ind]],pipe_type)) +
   commonTheme
 
+dev.copy(pdf, paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_scatterplot_", pipe_type,".pdf", sep=""))
+dev.off()
 
 # Test for linearity
 pvalue <- anova(lin, quad)$"Pr(>F)"
