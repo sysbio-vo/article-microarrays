@@ -59,8 +59,12 @@ dev.off()
 # ggplot2
 library(ggplot2)
 commonTheme = list(labs(x="log2 probeset intensity",
-                        y="log2 FPKM"),
-                   theme_bw()+theme(legend.position="none"))
+                        y="log2 FPKM", size=16),
+                   theme_bw()+
+                   theme(legend.position="none",
+                         axis.text = element_text(size=18),
+                         axis.title = element_text(size=16)))
+
 df <- data.frame(x=eset, y=rnaseq)
 ggplot(data=df,aes(x,y)) + 
   geom_point(alpha=0.3) +
