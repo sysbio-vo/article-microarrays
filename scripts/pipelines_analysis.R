@@ -61,12 +61,19 @@ library(ggplot2)
 commonTheme = list(labs(x="log2 probeset intensity",
                         y="log2 FPKM"),
                    theme_bw()+theme(legend.position="none"))
+df <- data.frame(x=eset, y=rnaseq)
 ggplot(data=df,aes(x,y)) + 
   geom_point(alpha=0.3) +
   stat_density2d(aes(fill=..level..,alpha=..level..),geom='polygon',colour='black', alpha=0.5) + 
   scale_fill_continuous(low="#2FFF71", high="#FF4C48") +
   geom_smooth(method=lm, linetype=1, colour="black", se=F, size=2) + 
   geom_smooth(method=lm, formula=y~x+I(x^2)+I(x^3), linetype=1, colour="blue", se=F, size=2) + 
+  geom_vline(xintercept = median(df$x), linetype=2) + 
+  geom_hline(yintercept = median(df$y), linetype=2) + 
+  annotate("text", x=min(df$x)+1, y=max(df$y), label=paste("R=",round(r_lin, digits = 3)), color="black", size=6) +
+  annotate("text", x=min(df$x)+1, y=max(df$y)-1, label=paste("R=",round(r_quad, digits = 3)), color="blue", size=6) +
+  scale_x_continuous(breaks = trunc(seq(trunc(min(df$x)), max(df$x), by = 2), 1)) +
+  scale_y_continuous(breaks = trunc(seq(trunc(min(df$y)), max(df$y), by = 2), 1)) +  
   commonTheme
 
 
