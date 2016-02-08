@@ -6,7 +6,7 @@ diagPlot<-function(model){
       scale_fill_continuous(low="#22B2AA", high="#FF9863")+
       stat_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")+
       xlab("Fitted values")+ylab("Residuals")+
-      ggtitle("Residual vs Fitted Plot")+theme_bw(legend.position="none")
+      ggtitle("Residual vs Fitted Plot")+theme_bw()+theme(legend.position="none")
   
   p3<-ggplot(model, aes(.fitted, sqrt(abs(.stdresid))))+geom_point(na.rm=TRUE, alpha=0.3)+
       stat_smooth(method="loess", na.rm = TRUE)+xlab("Fitted Value")+
