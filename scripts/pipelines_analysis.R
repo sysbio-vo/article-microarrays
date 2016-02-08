@@ -3,7 +3,10 @@ library(stats)
 library(cowplot)
 library(plyr)
 library(ggplot2)
-
+library(grid)
+library(gridExtra)
+source("scatterPlot.R")
+source("diagnosticPlots.R")
 ### Initial info
 studies <- read.table("../pdata/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
@@ -24,45 +27,27 @@ for (i in affy) {
 
 plot_list = list()
 for (ind in 1:length(affy)) {
-eset <- pipelines[[ind]]@dataset@exprs$eset
-rnaseq <- pipelines[[ind]]@dataset@exprs$rnaseq
-
-# Fit linear and polynomial functions:
-lin<-lm(rnaseq~eset)
-quad<-lm(rnaseq~eset+I(eset^2)+I(eset^3))
-r_lin <- summary(lin)$r.squared
-r_quad <- summary(quad)$r.squared
-# Fit non-linear model
-#loess_fit <- loess(rnaseqExprs$val~eset$val)
-#lines(eset$val[index], predict(loess_fit)[index], col="blue")
-
-# Scatter plot
-df <- data.frame(x=eset, y=rnaseq)
-commonTheme = list(labs(x="log2 probeset intensity",
-                        y="log2 FPKM", size=16),
-                   theme_bw()+
-                   theme(legend.position="none",
-                         plot.margin=unit(c(5,5,5,5),"mm"),
-                         axis.text = element_text(size=18),
-                         axis.title = element_text(size=16),
-                         plot.title = element_text(face="bold", size=22)))
-
-new_plot <- ggplot(data=df,aes(x,y)) + 
-  geom_point(alpha=0.3) +
-  stat_density2d(aes(fill=..level..,alpha=..level..),geom='polygon',colour='black', alpha=0.5) + 
-  scale_fill_continuous(low="#2FFF71", high="#FF4C48") +
-  geom_smooth(method=lm, linetype=1, colour="black", se=F, size=2) + 
-  geom_smooth(method=lm, formula=y~x+I(x^2)+I(x^3), linetype=1, colour="blue", se=F, size=2) + 
-  geom_vline(xintercept = median(df$x), linetype=2) + 
-  geom_hline(yintercept = median(df$y), linetype=2) + 
-  annotate("text", x=min(df$x)+1.5, y=max(df$y), label=paste("R=",round(r_lin, digits = 3)), color="black", size=6) +
-  annotate("text", x=min(df$x)+1.5, y=max(df$y)-1, label=paste("R=",round(r_quad, digits = 3)), color="blue", size=6) +
-  scale_x_continuous(breaks = round(seq(round_any(min(df$x),2), max(df$x), by = 2), 1)) +
-  scale_y_continuous(breaks = round(seq(round_any(min(df$y),2), max(df$y), by = 2), 1)) +  
-  ggtitle(paste(studies$ID[affy[ind]],pipe_type)) +
-  coord_fixed() +
-  commonTheme
+  eset <- pipelines[[ind]]@dataset@exprs$eset
+  rnaseq <- pipelines[[ind]]@dataset@exprs$rnaseq
+  # Fit linear and polynomial functions:  
+  lin<-lm(rnaseq~eset)
+  quad<-lm(rnaseq~eset+I(eset^2)+I(eset^3))  
+  # Scatter plot
+  df <- data.frame(x=eset, y=rnaseq)
+  new_plot <- scatterPlot(df)
   plot_list <- c(plot_list, list(new_plot))
+  # Diagnostic plots
+  diagPlts<-diagPlot(lin)
+  pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+  title <- ggdraw() + draw_label(paste("Linear function fit.", studies[affy[ind],]$ID), fontface='bold')  
+  pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
+  diagPlts<-diagPlot(quad)
+  pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+  title <- ggdraw() + draw_label(paste("Cubic function fit.", studies[affy[ind],]$ID), fontface='bold')  
+  pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
+  pl <- plot_grid(pl1, pl2, nrow=2, align="h")
+  save_plot(paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_diagnostic_", pipe_type,".pdf", sep=""),
+            pl, base_height=8, nrow = 2)
 }
 
 pl <- plot_grid(plotlist=plot_list, ncol=3, align="hv")
@@ -101,5 +86,5 @@ ceresPlots(model2)
 
 # Global test of model assumptions
 library(gvlma)
-gvmodel <- gvlma(model1)
+gvmodel <- gvlma(quad)
 summary(gvmodel)
