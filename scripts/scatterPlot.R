@@ -1,5 +1,4 @@
-require(ggplot2)
-scatterPlot <- function(df) {
+scatterPlot <- function(df, title) {
   # Fit linear and polynomial functions:  
   lin<-lm(rnaseq~eset)
   quad<-lm(rnaseq~eset+I(eset^2)+I(eset^3))
@@ -27,7 +26,7 @@ scatterPlot <- function(df) {
     annotate("text", x=min(df$x)+1.5, y=max(df$y)-1, label=paste("R=",round(r_quad, digits = 3)), color="blue", size=6) +
     scale_x_continuous(breaks = round(seq(round_any(min(df$x),2), max(df$x), by = 2), 1)) +
     scale_y_continuous(breaks = round(seq(round_any(min(df$y),2), max(df$y), by = 2), 1)) +  
-    ggtitle(paste(studies$ID[affy[ind]],pipe_type)) +
+    ggtitle(title) +
     coord_fixed() +
     commonTheme
 
