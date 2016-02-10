@@ -46,8 +46,9 @@ for(geneID in geneIDs){
   rnaseqExprs = rbind(rnaseqExprs,newrow)
 }
  
-rnaseqExprs1 <- rnaseqExprs
-rnaseqExprs1[which(rnaseqExprs1$val==max(rnaseqExprs1$val)),]
+# Check what in top expressed genes
+#rnaseqExprs1 <- rnaseqExprs
+#rnaseqExprs1[which(rnaseqExprs1$val==max(rnaseqExprs1$val)),]
 
 rnaseqExprs$val <- unlist(lapply(rnaseqExprs$val, log2))
 

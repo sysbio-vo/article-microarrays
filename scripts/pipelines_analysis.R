@@ -3,8 +3,6 @@ library(stats)
 library(cowplot)
 library(plyr)
 library(ggplot2)
-library(grid)
-library(gridExtra)
 source("scatterPlot.R")
 source("diagnosticPlots.R")
 ### Initial info
@@ -20,8 +18,8 @@ setClass("pipeline",
 pipelines <- c()
 
 for (i in affy) {
-  exprs <- read.table(paste("../expression_data/", studies[affy[i],]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
-  dataset <- new("dataset", ID=as.character(studies[affy[i],]$ID), exprs=exprs)
+  exprs <- read.table(paste("../expression_data/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
+  dataset <- new("dataset", ID=as.character(studies[i,]$ID), exprs=exprs)
   pipelines <- c(pipelines, new("pipeline", name=pipe_type, dataset=dataset))
 }
 
@@ -37,21 +35,21 @@ for (ind in 1:length(affy)) {
   new_plot <- scatterPlot(df)
   plot_list <- c(plot_list, list(new_plot))
   # Diagnostic plots
-  diagPlts<-diagPlot(lin)
-  pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
-  title <- ggdraw() + draw_label(paste("Linear function fit.", studies[affy[ind],]$ID), fontface='bold')  
-  pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
-  diagPlts<-diagPlot(quad)
-  pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
-  title <- ggdraw() + draw_label(paste("Cubic function fit.", studies[affy[ind],]$ID), fontface='bold')  
-  pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
-  pl <- plot_grid(pl1, pl2, nrow=2, align="h")
-  save_plot(paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_diagnostic_", pipe_type,".pdf", sep=""),
-            pl, base_height=8, nrow = 2)
+#    diagPlts<-diagPlot(lin)
+#    pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+#    title <- ggdraw() + draw_label(paste("Linear function fit.", studies[affy[ind],]$ID), fontface='bold')  
+#    pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
+#    diagPlts<-diagPlot(quad)
+#    pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+#    title <- ggdraw() + draw_label(paste("Cubic function fit.", studies[affy[ind],]$ID), fontface='bold')  
+#    pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
+#    pl <- plot_grid(pl1, pl2, nrow=2, align="h")
+#    save_plot(paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_diagnostic_", pipe_type,".png", sep=""),
+#              pl, base_height=8, nrow = 2)
 }
 
 pl <- plot_grid(plotlist=plot_list, ncol=3, align="hv")
-save_plot(paste("../plots/", pipe_type, "/all_scatterplot_", pipe_type,".pdf", sep=""), pl,
+save_plot(paste("../plots/", pipe_type, "/all_scatterplot_", pipe_type,".png", sep=""), pl,
           ncol = 3,
           nrow = 1,
           base_height=6,
