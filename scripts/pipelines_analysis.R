@@ -6,7 +6,7 @@ library(ggplot2)
 source("scatterPlot.R")
 source("diagnosticPlots.R")
 ### Initial info
-studies <- read.table("../pdata/studies.tsv", header = TRUE, sep = "\t")
+studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
 pipe_types <- c("mean", "random")
 

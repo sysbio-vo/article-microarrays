@@ -1,4 +1,9 @@
 expression_data/
 pdata/
 plots/
-RNA-Seq/
+raws/
+preprocessed/
+exprs/
+general/
+RNA-seq/
+scores/
