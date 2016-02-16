@@ -26,10 +26,11 @@ for (i in ind) {
   eset<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix.tsv", sep=""), header=TRUE)
   probesetsID <- rownames(eset)
   # Get probesets ID to EntrezID mapping
-  if (studies[i,]$platformAbbr=="hugene10st")
+  if (studies[i,]$platformAbbr=="hugene10st") {
     probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, "transcriptcluster.db", sep="")), probesetsID, "ENTREZID")
-  else
+  } else {
     probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, ".db", sep="")), probesetsID, "ENTREZID")
+  }
   
   # Delete NAs
   probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]

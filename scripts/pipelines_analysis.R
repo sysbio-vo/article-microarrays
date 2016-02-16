@@ -8,7 +8,7 @@ source("diagnosticPlots.R")
 ### Initial info
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
-pipe_types <- c("mean", "random")
+pipe_types <- c("brainarray", "max", "mean", "random", "maxoverall")
 
 # Create classes for storing pipelines results
 setClass("dataset",
@@ -19,7 +19,7 @@ pipelines <- c()
 
 for (i in 1:length(studies$ID)) {
   for (pipe_type in pipe_types) {
-    exprs <- read.table(paste("../expression_data/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
+    exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
     dataset <- new("dataset", ID=as.character(studies[i,]$ID), exprs=exprs)
     pipelines <- c(pipelines, new("pipeline", name=pipe_type, dataset=dataset))
   }
@@ -37,22 +37,22 @@ for (ind in 1:length(pipelines)) {
   new_plot <- scatterPlot(df, paste(pipelines[[ind]]@dataset@ID,pipelines[[ind]]@name))
   plot_list <- c(plot_list, list(new_plot))
   # Diagnostic plots
-  diagPlts<-diagPlot(lin)
-  pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
-  title <- ggdraw() + draw_label(paste("Linear Function Fit.", pipelines[[ind]]@dataset@ID), fontface='bold')  
-  pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
-  diagPlts<-diagPlot(quad)
-  pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
-  title <- ggdraw() + draw_label(paste("Cubic Function Fit.", pipelines[[ind]]@dataset@ID), fontface='bold')  
-  pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
-  pl <- plot_grid(pl1, pl2, nrow=2, align="h")
-  save_plot(paste("../plots/", pipelines[[ind]]@dataset@ID, "_diagnostic_", pipelines[[ind]]@name,".png", sep=""),
-            pl, base_height=8, nrow = 2)
+#   diagPlts<-diagPlot(lin)
+#   pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+#   title <- ggdraw() + draw_label(paste("Linear Function Fit.", pipelines[[ind]]@dataset@ID), fontface='bold')  
+#   pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
+#   diagPlts<-diagPlot(quad)
+#   pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+#   title <- ggdraw() + draw_label(paste("Cubic Function Fit.", pipelines[[ind]]@dataset@ID), fontface='bold')  
+#   pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
+#   pl <- plot_grid(pl1, pl2, nrow=2, align="h")
+#   save_plot(paste("../plots/", pipelines[[ind]]@dataset@ID, "_diagnostic_", pipelines[[ind]]@name,".png", sep=""),
+#             pl, base_height=8, nrow = 2)
 }
 
-pl <- plot_grid(plotlist=plot_list, ncol=4, align="hv")
+pl <- plot_grid(plotlist=plot_list, ncol=5, align="hv")
 save_plot(paste("../plots/all_scatterplot.png", sep=""), pl,
-          ncol = 4,
+          ncol = 5,
           nrow = 3,
           base_height=6,
           base_aspect_ratio=0.7)

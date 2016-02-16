@@ -6,7 +6,7 @@ detach("package:MASS", unload=TRUE)
 
 ### Initial info
 pipe_types <- c("max", "mean", "random")
-pipe_type <- "max"
+pipe_type <- "maxoverall"
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 genes_common <- read.table("../general/common_genes_list.txt", sep = "\t", header = TRUE)
 
@@ -40,10 +40,18 @@ for (i in 1:length(studies$ID)) {
   # Filter eset based on left probesets
   eset <- eset[which(rownames(eset) %in% probesetsID_EntrezID$PROBEID),]
   # Select TNBC samples only
+  eset.all <- eset
   pdata<-pdata[which(pdata$CancerType=="TNBC"),]
   pdata<-pdata[which(is.na(pdata$Outliers)),]
   eset <- eset[colnames(eset) %in% pdata$SampleAccessionNumber]
   # Collapse rows based on one of the algorithms
+  if (pipe_type=="maxoverall") {
+    collapsed = collapseRows(eset.all, probesetsID_EntrezID$ENTREZID, probesetsID_EntrezID$PROBEID, method="MaxMean")  
+    eset <-collapsed$datETcollapsed
+    pdata<-pdata[which(pdata$CancerType=="TNBC"),]
+    pdata<-pdata[which(is.na(pdata$Outliers)),]
+    eset <- eset[,colnames(eset) %in% pdata$SampleAccessionNumber]
+  }
   if (pipe_type=="max") {
     collapsed = collapseRows(eset, probesetsID_EntrezID$ENTREZID, probesetsID_EntrezID$PROBEID, method="MaxMean")  
     eset <-collapsed$datETcollapsed
