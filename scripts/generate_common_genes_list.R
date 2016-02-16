@@ -37,8 +37,14 @@ for (i in ind) {
   # Delete probesets, which have multiple mappings to genes
   n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
   uniques <- n_occur[n_occur$Freq == 1,]$Var1
+  #doubles <- n_occur[n_occur$Freq > 1,]$Var1
   probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$PROBEID %in% uniques),]
   IDs <- c(IDs, list(probesetsID_EntrezID))  
+  # Generate list of genes, represented by multiple probesets
+  n_occur <- data.frame(table(probesetsID_EntrezID$ENTREZID))
+  dupls <- n_occur[n_occur$Freq > 1,]$Var1
+  write.table(dupls, paste("../general/onetomany_genes_", studies[i,]$platformAbbr,".txt", sep=""), sep="\t", quote=FALSE,
+              col.names=c("ENTREZID"), row.names=FALSE)
   
   # Brainarray probesets
   eset.br<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), header=TRUE)
