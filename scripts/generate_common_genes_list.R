@@ -9,21 +9,27 @@ library(hgu133plus2hsentrezg.db)
 library(hgu133plus2.db)
 library(hugene10sttranscriptcluster.db)
 library(illuminaHumanv4.db)
-library(illuminaHumanv3.db)
+#library(illuminaHumanv3.db)
 
 # Load studies description
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
-illu <- which(grepl("Illu", studies$platform))
-affyPlatforms <- levels(studies$platformAbbr)
+platforms <- levels(studies$platformAbbr)
 ind = c()
-for (pl in affyPlatforms) {
+for (pl in platforms) {
   ind = c(ind, which.max(studies$platformAbbr==pl))
 }
 
 IDs <- c()
+platform = ""
 for (i in ind) {
   # Affymetrix/Illumina probesets
-  eset<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix.tsv", sep=""), header=TRUE)
+  if (grepl("Illu", studies[i,]$platform)) {
+    platform = "illumina" 
+  } else {
+    platform = "affymetrix"
+  }
+  
+  eset<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_", platform, ".tsv", sep=""), header=TRUE)
   probesetsID <- rownames(eset)
   # Get probesets ID to EntrezID mapping
   if (studies[i,]$platformAbbr=="hugene10st") {

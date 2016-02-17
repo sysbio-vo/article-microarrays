@@ -7,8 +7,8 @@ source("scatterPlot.R")
 source("diagnosticPlots.R")
 ### Initial info
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
-affy <- which(grepl("Affy", studies$platform))
-pipe_types <- c("brainarray", "max", "mean", "random", "maxoverall")
+pipe_types <- c("brainarray", "max", "maxoverall", "mean", "scores", "random")
+onetomany = TRUE
 
 # Create classes for storing pipelines results
 setClass("dataset",
@@ -19,9 +19,16 @@ pipelines <- c()
 
 for (i in 1:length(studies$ID)) {
   for (pipe_type in pipe_types) {
-    exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
-    dataset <- new("dataset", ID=as.character(studies[i,]$ID), exprs=exprs)
-    pipelines <- c(pipelines, new("pipeline", name=pipe_type, dataset=dataset))
+    if (grepl("Illu", studies[i,]$platform) && pipe_type=="brainarray") {
+    } else {
+      exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
+      if (onetomany) {
+        otmGenes <- read.table(paste("../general/onetomany_genes_", studies[i,]$platformAbbr, ".txt", sep=""), header = TRUE, sep = "\t")
+        exprs <- exprs[rownames(exprs) %in% otmGenes$ENTREZID,]        
+      }
+      dataset <- new("dataset", ID=as.character(studies[i,]$ID), exprs=exprs)
+      pipelines <- c(pipelines, new("pipeline", name=pipe_type, dataset=dataset))
+    }
   }
 }
 
@@ -50,12 +57,19 @@ for (ind in 1:length(pipelines)) {
 #             pl, base_height=8, nrow = 2)
 }
 
-pl <- plot_grid(plotlist=plot_list, ncol=5, align="hv")
-save_plot(paste("../plots/all_scatterplot.png", sep=""), pl,
-          ncol = 5,
-          nrow = 3,
+pl <- plot_grid(plotlist=plot_list, align="hv", ncol = length(pipe_types))
+plotname = ""
+if (onetomany) {
+  plotname = "../plots/onetomany_scatterplot.png"
+} else {
+  plotname = "../plots/all_scatterplot.png"
+}
+
+save_plot(plotname, pl,
+          ncol = length(pipe_types),
+          nrow = length(studies$ID),
           base_height=6,
-          base_aspect_ratio=0.7)
+          base_aspect_ratio=0.8)
 
 #dev.copy(pdf, paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_scatterplot_", pipe_type,".pdf", sep=""))
 #dev.off()

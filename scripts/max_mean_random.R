@@ -1,12 +1,12 @@
 # Load HuGene and hgu133 BrainArray packages
 library(hgu133plus2.db)
 library(hugene10sttranscriptcluster.db)
+library(illuminaHumanv4.db)
 library(WGCNA)
-detach("package:MASS", unload=TRUE)
 
 ### Initial info
-pipe_types <- c("max", "mean", "random")
-pipe_type <- "maxoverall"
+pipe_types <- c("max", "mean", "random", "maxoverall")
+pipe_type <- pipe_types[2]
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 genes_common <- read.table("../general/common_genes_list.txt", sep = "\t", header = TRUE)
 
@@ -21,7 +21,6 @@ for (i in 1:length(studies$ID)) {
   } else {
     platform <- "illumina"
   }
-  
   eset<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_", platform, ".tsv", sep=""), header=TRUE)
   # List of probesets IDs
   probesetsID<-rownames(eset)

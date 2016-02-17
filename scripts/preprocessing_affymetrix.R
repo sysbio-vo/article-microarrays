@@ -15,9 +15,8 @@ library(cowplot)
 # Load studies description
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
-illu <- which(grepl("Illu", studies$platform))
 # Change this to appropriate index
-i = 3
+i = affy[1]
 
 ## Affymetrix data preprocessing
 # Load pdata and CEL files
