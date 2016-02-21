@@ -80,7 +80,7 @@ for (i in ind) {
 }
 
 # Intersect with RNA-seq
-rnaseq <- read.table("../expression_data/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
+rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
 common <- intersect(common, rnaseq$entrezID)
 write.table(common, "../general/common_genes_list.txt", sep="\t", quote=FALSE,
             col.names=c("ENTREZID"), row.names=FALSE)

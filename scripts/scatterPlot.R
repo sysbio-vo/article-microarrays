@@ -1,9 +1,9 @@
-scatterPlot <- function(df, title) {
+scatterPlot <- function(df, title, ranges) {
   # TODO: replace the constants with passing arguments
-  minx=2
-  maxx=14
-  miny=-7
-  maxy=10
+  minx=ranges[1]
+  maxx=ranges[2]
+  miny=ranges[3]
+  maxy=ranges[4]
   # Fit linear and polynomial functions:  
   lin<-lm(rnaseq~eset)
   quad<-lm(rnaseq~eset+I(eset^2)+I(eset^3))
@@ -17,7 +17,7 @@ scatterPlot <- function(df, title) {
                            plot.margin=unit(c(5,5,5,5),"mm"),
                            axis.text = element_text(size=18),
                            axis.title = element_text(size=16),
-                           plot.title = element_text(face="bold", size=22)))
+                           plot.title = element_text(face="bold", size=20)))
   
   p <- ggplot(data=df,aes(x,y)) + 
     geom_point(alpha=0.3) +

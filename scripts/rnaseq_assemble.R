@@ -17,8 +17,8 @@ vec1<-vec1[which(duplicated(Transcripts)==FALSE),]
 rownames(vec1)<-Transcripts[which(duplicated(Transcripts)==FALSE)] # Removes duplicated (few)
 for(i in 1:ncol(vec1)) vec1[,i]<-as.numeric(as.character(vec1[,i]))
 
-write.table(vec1, "../expression_data/rnaseq_data.tsv", sep="\t", quote=FALSE)
-rnaseqExprs <- read.table("../expression_data/rnaseq_data.tsv", header = TRUE, sep = "\t")
+write.table(vec1, "../rnaseq/rnaseq_data.tsv", sep="\t", quote=FALSE)
+rnaseqExprs <- read.table("../rnaseq/rnaseq_data.tsv", header = TRUE, sep = "\t")
 
 rnaseqExprs <- rowMeans(rnaseqExprs)
 # Takes only transcripts with at least 0.01 fpkm expression
@@ -51,8 +51,4 @@ for(geneID in geneIDs){
 #rnaseqExprs1[which(rnaseqExprs1$val==max(rnaseqExprs1$val)),]
 
 rnaseqExprs$val <- unlist(lapply(rnaseqExprs$val, log2))
-
-genes_common <- read.table("../expression_data/common_genes.txt", header = FALSE, sep = "\t")
-rnaseqExprs <- rnaseqExprs[rnaseqExprs$entrezID %in% genes_common[,1],]
-#write.table(rnaseqExprs, "expression_data/rnaseq_data_processed.tsv", sep="\t", quote=FALSE)
-write.table(rnaseqExprs, "../expression_data/rnaseq_data_processed_sum.tsv", sep="\t", quote=FALSE)
+write.table(rnaseqExprs, "../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", quote=FALSE)

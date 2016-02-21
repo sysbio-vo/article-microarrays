@@ -18,7 +18,7 @@ for (i in ind) {
   # Reading phenodata
   pdata <-read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header=TRUE, sep="\t")
   # Reading expression data
-  rnaseq <- read.table("../expression_data/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
+  rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
   eset<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_", pipe_type, ".tsv", sep=""), header=TRUE)
   # List of probesets IDs
   probesetsID<-rownames(eset)

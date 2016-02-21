@@ -1,4 +1,3 @@
-expression_data/
 pdata/
 plots/
 raws/
@@ -7,3 +6,4 @@ exprs/
 general/
 RNA-seq/
 scores/
+rnaseq/
