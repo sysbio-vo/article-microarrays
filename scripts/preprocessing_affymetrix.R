@@ -60,7 +60,7 @@ pl3 <- plot_grid(title, pl3, ncol=1, rel_heights=c(0.1, 1))
 pl <- plot_grid(pl, pl3, nrow=2, align="hv")
 
 # Save plot for manual quality control
-save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA_nobatch.png", sep=""),
+save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA_nobatch.pdf", sep=""),
           pl, base_width=10, nrow=2)
 
 ## In case smth is wrong with PCA plots perform next steps.

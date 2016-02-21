@@ -1,16 +1,42 @@
+# Loading libraries
 library(lmtest)
 library(stats)
 library(cowplot)
 library(plyr)
 library(ggplot2)
+# Loading custom scripts
 source("scatterPlot.R")
 source("diagnosticPlots.R")
-### Initial info
+source("barPlot.R")
+
+### Initial info section
+
+# Load studies description file
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
+studies <- studies[c(2,3),]
+# Define pipelines you want to analyze
 #pipe_types <- c("brainarray", "max", "maxoverall", "mean", "scores", "random")
-pipe_types <- c("brainarray", "mean", "scores")
-onetomany = FALSE
-onetoone = TRUE
+#pipe_types <- c("brainarray", "bioconductor", "scores")
+pipe_types <- c("max")
+# Define, which subset of genes you want to represent on plots
+plot_types <- c("all","onetoone","onetomany")
+plot_type <- plot_types[1]
+# Define plot names based on current plot type
+if (plot_type=="all") {
+  barplot.name = "../plots/all_barplot.pdf"
+  scatterplot.name = "../plots/all_scatterplot.pdf"
+  diagnosticplot.name = "_all_diagnosticplot_"
+}
+if (plot_type=="onetoone") {
+  barplot.name = "../plots/onetoone_barplot.pdf"
+  scatterplot.name = "../plots/onetoone_scatterplot.pdf"
+  diagnosticplot.name = "_onetoone_diagnosticplot_"
+}
+if (plot_type=="onetomany") {
+  barplot.name = "../plots/onetomany_barplot.pdf"
+  scatterplot.name = "../plots/onetomany_scatterplot.pdf"
+  diagnosticplot.name = "_onetomany_diagnosticplot_"
+}
 
 # Create classes for storing pipelines results
 setClass("dataset",
@@ -19,16 +45,21 @@ setClass("pipeline",
          representation(name="character", dataset="dataset"))
 pipelines <- c()
 
+# Read exprs datasets into list of "pipeline" class elements
 for (i in 1:length(studies$ID)) {
   for (pipe_type in pipe_types) {
     if (grepl("Illu", studies[i,]$platform) && pipe_type=="brainarray") {
     } else {
-      exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
-      if (onetomany) {
+      if (pipe_type=="bioconductor") {
+        exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", "max", ".tsv", sep=""), header = TRUE, sep = "\t")
+      } else {
+        exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
+      }        
+      if (plot_type=="onetomany") {
         otmGenes <- read.table(paste("../general/onetomany_genes_", studies[i,]$platformAbbr, ".txt", sep=""), header = TRUE, sep = "\t")
         exprs <- exprs[rownames(exprs) %in% otmGenes$ENTREZID,]        
       }
-      if (onetoone) {
+      if (plot_type=="onetoone") {
         otoGenes <- read.table(paste("../general/onetomany_genes_", studies[i,]$platformAbbr, ".txt", sep=""), header = TRUE, sep = "\t")
         exprs <- exprs[!(rownames(exprs) %in% otoGenes$ENTREZID),]        
       }
@@ -38,119 +69,83 @@ for (i in 1:length(studies$ID)) {
   }
 }
 
+# Create data frames for storing correlation results
 pearson <- data.frame(pipeline=character(),
                       correlation=double(),
                       study=character(),  stringsAsFactors=FALSE) 
 spearman <- data.frame(pipeline=character(),
                        correlation=double(),
                        study=character(),  stringsAsFactors=FALSE) 
-plot_list = list()
-for (ind in 1:length(pipelines)) {
-  eset <- pipelines[[ind]]@dataset@exprs$eset
-  rnaseq <- pipelines[[ind]]@dataset@exprs$rnaseq
-  # Fit linear and polynomial functions:  
-#   lin<-lm(rnaseq~eset)
-#   quad<-lm(rnaseq~eset+I(eset^2)+I(eset^3))  
-  # Scatter plot
-#   df <- data.frame(x=eset, y=rnaseq)
-#   if (grepl("Illu", studies[studies$ID==pipelines[[ind]]@dataset@ID,]$platform)) {
-#     new_plot <- scatterPlot(df, paste(pipelines[[ind]]@dataset@ID,pipelines[[ind]]@name), c(6, 14, -7, 10))
+
+# Create empty list for storing indibidual scatter plots
+scatterplot_list = list()
+
+### Generating plots section
+
+# Cycle through the all the pipelines
+for (i in 1:length(pipelines)) {
+  # Just for simplicity of usage
+  eset <- pipelines[[i]]@dataset@exprs$eset
+  rnaseq <- pipelines[[i]]@dataset@exprs$rnaseq
+  # Fit linear and cubic functions:  
+  lin<-lm(rnaseq~eset)
+  cub<-lm(rnaseq~eset+I(eset^2)+I(eset^3))  
+  
+#   # Individual scatter plot
+#   df <- data.frame(eset=eset, rnaseq=rnaseq)
+#   # Ugly constants, cause Illumina has really different X range
+#   # TODO: get max and min automatically
+#   if (grepl("Illu", studies[studies$ID==pipelines[[i]]@dataset@ID,]$platform)) {
+#     new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(6, 14, -7, 10))
 #   } else {
-#     new_plot <- scatterPlot(df, paste(pipelines[[ind]]@dataset@ID,pipelines[[ind]]@name), c(2, 14, -7, 10))
+#     new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(2, 14, -7, 10))
 #   }
-#   plot_list <- c(plot_list, list(new_plot))
-  # Diagnostic plots
-#   diagPlts<-diagPlot(lin)
-#   pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
-#   title <- ggdraw() + draw_label(paste("Linear Function Fit.", pipelines[[ind]]@dataset@ID), fontface='bold')  
-#   pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
-#   diagPlts<-diagPlot(quad)
-#   pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
-#   title <- ggdraw() + draw_label(paste("Cubic Function Fit.", pipelines[[ind]]@dataset@ID), fontface='bold')  
-#   pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
-#   pl <- plot_grid(pl1, pl2, nrow=2, align="h")
-#   save_plot(paste("../plots/", pipelines[[ind]]@dataset@ID, "_onetoone_diagnostic_", pipelines[[ind]]@name,".pdf", sep=""),
-#             pl, base_width=5, nrow = 2)
-  # Correlation bar plots
-  pearson[nrow(pearson)+1, ] <- c(pipelines[[ind]]@name, round(cor(eset, rnaseq), 3), pipelines[[ind]]@dataset@ID)
-  spearman[nrow(spearman)+1, ] <- c(pipelines[[ind]]@name, round(cor(eset, rnaseq, method="spearman"), 3), pipelines[[ind]]@dataset@ID)
+#   scatterplot_list <- c(scatterplot_list, list(new_plot))
+  
+  ## Diagnostic plots
+  diagPlts<-diagPlot(lin)
+  pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+  title <- ggdraw() + draw_label(paste("Linear Function Fit.", pipelines[[i]]@dataset@ID), fontface='bold')  
+  pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
+  diagPlts<-diagPlot(cub)
+  pl2 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
+  title <- ggdraw() + draw_label(paste("Cubic Function Fit.", pipelines[[i]]@dataset@ID), fontface='bold')  
+  pl2 <- plot_grid(title, pl2, ncol=1, rel_heights=c(0.1, 1))
+  pl <- plot_grid(pl1, pl2, nrow=2, align="h")
+  save_plot(paste("../plots/", pipelines[[i]]@dataset@ID, diagnosticplot.name, pipelines[[i]]@name,".pdf", sep=""),
+            pl, base_width=5, nrow = 2)
+  
+  # Correlation data frame
+#   pearson[nrow(pearson)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq), 3), pipelines[[i]]@dataset@ID)
+#   spearman[nrow(spearman)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq, method="spearman"), 3), pipelines[[i]]@dataset@ID)
 }
 
+## Scatter plots
+# pl <- plot_grid(plotlist=scatterplot_list, align="v", ncol = length(pipe_types))
+# save_plot(scatterplot.name, pl,
+#           ncol = length(pipe_types),
+#           nrow = length(studies$ID),
+#           base_height=5,
+#           base_aspect_ratio=0.7)
+
+## Bar plots
+# Convert factor to numeric
 pearson$correlation <- as.numeric(as.character(pearson$correlation))
 spearman$correlation <- as.numeric(as.character(spearman$correlation))
-
-source("barPlot.R")
+# Pearson correlation bar plot
 pl <- barPlot(pearson)
-
+# Extract legend
 g <- ggplotGrob(pl + theme(legend.position="left"))$grobs
 legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-
 title <- ggdraw() + draw_label("Pearson Correlation", fontface='bold')  
 pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
+# Spearman correlation bar plot
 pl1 <- barPlot(spearman)
 title <- ggdraw() + draw_label("Spearman Correlation", fontface='bold')  
 pl1 <- plot_grid(title, pl1, ncol=1, rel_heights=c(0.1, 1))
 pl <- plot_grid(pl, pl1, nrow=2, align="h")
+# Combine two plots with the legend
 pl <- plot_grid(pl, legend, rel_widths = c(3, .3))
-
-plotname = ""
-if (onetomany) {
-  plotname = "../plots/onetomany_barplot.pdf"
-} else if (onetoone) {
-  plotname = "../plots/onetoone_barplot.pdf"
-} else {
-  plotname = "../plots/all_barplot.pdf"
-}
-save_plot(plotname, pl,
+# Save plot
+save_plot(barplot.name, pl,
           base_height=7, base_width=15)
-
-
-pl <- plot_grid(plotlist=plot_list, align="v", ncol = length(pipe_types))
-
-plotname = ""
-if (onetomany) {
-  plotname = "../plots/onetomany_short_scatterplot.pdf"
-} else if (onetoone) {
-  plotname = "../plots/onetoone_short_scatterplot.pdf"
-} else {
-  plotname = "../plots/all_short_scatterplot.pdf"
-}
-
-save_plot(plotname, pl,
-          ncol = length(pipe_types),
-          nrow = length(studies$ID),
-          base_height=5,
-          base_aspect_ratio=0.7)
-
-
-#dev.copy(pdf, paste("../plots/", pipe_type, "/", studies[affy[ind],]$ID, "_scatterplot_", pipe_type,".pdf", sep=""))
-#dev.off()
-
-# Test for linearity
-pvalue <- anova(lin, quad)$"Pr(>F)"
-stats:::plot.lm(lin, ask = FALSE, which=3)
-stats:::plot.lm(quad, ask = FALSE, which=3)
-
-# Another test for linearity
-resettest(rnaseqExprs$val~eset$val, power=3, type="regressor")
-
-# Breusch-Pagan test against heteroskedasticity
-bptest(model1)
-
-## From the car package
-# Evaluate homoscedasticity
-# non-constant error variance test
-library(car)
-ncvTest(model1)
-# plot studentized residuals vs. fitted values
-spreadLevelPlot(model1)
-# Evaluate Nonlinearity
-# component + residual plot
-crPlots(model1)
-# Ceres plots
-ceresPlots(model2)
-
-# Global test of model assumptions
-library(gvlma)
-gvmodel <- gvlma(quad)
-summary(gvmodel)
