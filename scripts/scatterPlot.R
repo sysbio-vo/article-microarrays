@@ -17,12 +17,12 @@ scatterPlot <- function(df, title, lin, cub, ranges) {
                            axis.title = element_text(size=16),
                            plot.title = element_text(face="bold", size=18)))
   
-  p <- ggplot(data=df,aes(eset,rnaseq)) + 
+  p <- ggplot(data=df,aes(x=eset,y=rnaseq)) + 
     geom_point(alpha=0.3) +
     stat_density2d(aes(fill=..level..,alpha=..level..),geom='polygon',colour='black', alpha=0.5) + 
     scale_fill_continuous(low="#2FFF71", high="#FF4C48") +
     geom_smooth(method=lm, linetype=1, colour="black", se=F, size=2) + 
-    geom_smooth(method=lm, formula=cub$call$formula, linetype=1, colour="blue", se=F, size=2, fullrange=FALSE) + 
+    geom_smooth(method=lm, formula=(y~x+I(x^2)+I(x^3)), linetype=1, colour="blue", se=F, size=2, fullrange=FALSE) + 
     geom_vline(xintercept = median(df$eset), linetype=2) + 
     geom_hline(yintercept = median(df$rnaseq), linetype=2) + 
     annotate("text", x=min(df$eset)+1.5, y=max(df$rnaseq)-1, label=paste("R=",round(r_lin, digits = 3)), color="black", size=6) +

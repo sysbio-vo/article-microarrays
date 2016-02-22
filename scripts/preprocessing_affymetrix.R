@@ -16,7 +16,7 @@ library(cowplot)
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
 # Change this to appropriate index
-i = affy[1]
+i = affy[3]
 
 ## Affymetrix data preprocessing
 # Load pdata and CEL files
@@ -47,12 +47,12 @@ pData(eset.br)$ScanDate <- pData(eset)$ScanDate
 pca = prcomp(t(exprs(eset)))
 pca.br = prcomp(t(exprs(eset.br)))
 
-title <- ggdraw() + draw_label(paste("Affymetrix Probesets Definitions.", studies[i,]$ID))  
+title <- ggdraw() + draw_label(paste("Affymetrix Probesets Definitions.", studies[i,]$ID), fontface='bold')  
 pl1 <- autoplot(pca, data = pData(eset), colour="CancerType")
 pl2 <- autoplot(pca, data = pData(eset), colour="ScanDate")
 pl <- plot_grid(pl1, pl2, ncol=2, align="hv")
 pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
-title <- ggdraw() + draw_label(paste("Brainarray Probesets Definitions.", studies[i,]$ID))  
+title <- ggdraw() + draw_label(paste("Brainarray Probesets Definitions.", studies[i,]$ID), fontface='bold')  
 pl1 <- autoplot(pca.br, data = pData(eset.br), colour="CancerType")
 pl2 <- autoplot(pca.br, data = pData(eset.br), colour="ScanDate")
 pl3 <- plot_grid(pl1, pl2, ncol=2, align="hv")

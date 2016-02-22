@@ -32,10 +32,12 @@ write.table(exprs(lumi.N), paste("../preprocessed/", studies[i,]$ID, "_preproces
 lumi.N@phenoData = pd
 # Perform PCA and plot
 pca = prcomp(t(exprs(lumi.N)))
+title <- ggdraw() + draw_label(studies[i,]$ID, fontface='bold')  
 pl <- autoplot(pca, data = pData(lumi.N), colour="CancerType")
+pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
 
 # Save plot for manual quality control
-save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA.png", sep=""),
+save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA.pdf", sep=""),
           pl)
 
 probesetsID <- rownames(exprs(lumi.N))
