@@ -14,6 +14,7 @@ studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 freq_list <- data.frame()
 varplot_list <- c()
 simple=FALSE
+varofvar=TRUE
 
 # Generate aggregated microarray-rnaseq expression files for plots feeding
 for (i in 1:length(studies$ID)) {
@@ -59,7 +60,8 @@ for (i in 1:length(studies$ID)) {
   eset$ENTREZID <- probesetsID_EntrezID$ENTREZID
   if (simple) {
     eset <- data.frame(val=rowMeans(eset), row.names=rownames(eset))
-  } else {
+  }
+  if (bootstrap) {
     eset <- melt(eset)
     eset <- eset[,-2] 
   }
@@ -75,12 +77,21 @@ for (i in 1:length(studies$ID)) {
         variance <- c(variance, sd(eset[eset$ENTREZID %in% uniques[j],]$val))
     }
     eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=variance)
-  } else {
+  }
+  if (bootstrap) {
     variance <- data.frame(Mean=double(), Lower=double(), Upper=double(), stringsAsFactors=FALSE)
     for (j in 1:length(uniques)) {
       variance[nrow(variance)+1,] <- smean.cl.boot(eset[eset$ENTREZID %in% uniques[j],]$value)
     }
-    eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=(var$Upper - var$Lower))
+    eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=(variance$Upper - variance$Lower))
+  }
+  if (varofvar) {
+    variance <- c()
+    eset.temp <- eset[,-ncol(eset)]
+    for (j in 1:length(uniques)) {
+        variance <- c(variance, sd(apply(eset.temp[eset$ENTREZID %in% uniques[j],],2,sd)))
+    }
+    eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=variance)
   }
 
   exprs <- merge(eset, rnaseq, by.x = "ENTREZID", by.y="entrezID")
@@ -95,7 +106,7 @@ pl <- plot_grid(plotlist=varplot_list, ncol=2, nrow=2, align="v")
 save_plot("../plots/onetomany_bootstrap_variance_scatterplot.pdf", pl,
           base_height=4, base_aspect_ratio=1.5, nrow=2, ncol=2)
 
-save_plot("../plots/onetomany_bootstrap_variance_scatterplot.pdf", new_plot,
+save_plot("../plots/onetomany_varofvar_scatterplot.pdf", new_plot,
           base_height=10)
 
 # pl <- ggplot(data=freq_list, aes(x=ProbesetsNum, y=Freq, fill=ProbesetsNum)) +

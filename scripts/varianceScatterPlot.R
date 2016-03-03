@@ -23,7 +23,7 @@ scatterPlot <- function(df, title, ranges) {
     scale_x_continuous(breaks = seq(minx, maxx, by = 2), limits=c(minx, maxx)) +
     scale_y_continuous(breaks = round(seq(round_any(min(df$rnaseq),2), max(df$rnaseq), by = 2), 1), limits=c(miny, maxy)) +  
     ggtitle(title) +
-    coord_fixed() +
+#    coord_fixed() +
     commonTheme
   
   return(p)
