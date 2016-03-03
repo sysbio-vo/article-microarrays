@@ -69,33 +69,22 @@ for (i in 1:length(studies$ID)) {
   eset <- eset[eset$ENTREZID %in% rnaseq$entrezID,]
 
   uniques <- unique(eset$ENTREZID)
-  variance <- c()
-  for (j in 1:length(uniques)) {
-    if (simple) {
-      variance <- c(variance, sd(eset[eset$ENTREZID %in% uniques[j],]$val))
-    } else {
-      variance <- c(variance, smean.cl.boot(eset[eset$ENTREZID %in% uniques[j],]$value))
+  if (simple) {
+    variance <- c()
+    for (j in 1:length(uniques)) {
+        variance <- c(variance, sd(eset[eset$ENTREZID %in% uniques[j],]$val))
     }
-  }
-  if (!simple) {
-    var <- data.frame(Mean=double(), Lower=double(), Upper=double(), stringsAsFactors=FALSE)
-    j=1
-    while (j<=length(uniques)*3) {
-      var[nrow(var)+1,] <- variance[j:(j+2)]
-      j = j+3
-    }
-    #eset <- data.frame(row.names=uniques, ENTREZID=uniques, Mean=var$Mean, Lower=var$Lower, Upper=var$Upper)
-    eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=(var$Upper - var$Lower))
-  } else {
     eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=variance)
+  } else {
+    variance <- data.frame(Mean=double(), Lower=double(), Upper=double(), stringsAsFactors=FALSE)
+    for (j in 1:length(uniques)) {
+      variance[nrow(variance)+1,] <- smean.cl.boot(eset[eset$ENTREZID %in% uniques[j],]$value)
+    }
+    eset <- data.frame(row.names=uniques, ENTREZID=uniques, variance=(var$Upper - var$Lower))
   }
 
   exprs <- merge(eset, rnaseq, by.x = "ENTREZID", by.y="entrezID")
-  if (simple) {
-    colnames(exprs) <- c("ENREZID", "eset", "rnaseq")
-  } else {
-    colnames(exprs) <- c("ENREZID", "Mean", "Lower", "Upper", "rnaseq")
-  }
+  colnames(exprs) <- c("ENREZID", "eset", "rnaseq")
 
   source("varianceScatterPlot.R")
   new_plot <- scatterPlot(exprs, paste(studies[i,]$ID, sep=""), c(-7, 11, 0, 2))
