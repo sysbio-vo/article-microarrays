@@ -1,10 +1,10 @@
 # RNA-seq data
-samples<-read.table("../RNA-Seq/SamplesRNASeq.txt",header=F)
+samples<-read.table("../RNA-seq/SamplesRNASeq.txt",header=F)
 samples<-as.character(samples$V1)
-Transcripts<-as.character(read.table("../RNA-Seq/SRR1313132_cufflinks/genes.fpkm_tracking",header=T)$tracking_id)
+Transcripts<-as.character(read.table("../RNA-seq/SRR1313132_cufflinks/genes.fpkm_tracking",header=T)$tracking_id)
 vec<-Transcripts
 for(samp in samples){
-  file1<-paste("../RNA-Seq/",samp,"_cufflinks/","genes.fpkm_tracking",sep="",collapse = "")
+  file1<-paste("../RNA-seq/",samp,"_cufflinks/","genes.fpkm_tracking",sep="",collapse = "")
   data_in<-read.table(file1,header=T)
   data_in<-data_in[match(Transcripts,data_in$tracking_id),]
   FPKM<-as.numeric(as.character(data_in$FPKM))
@@ -31,24 +31,25 @@ rnaseqExprs <- rnaseqExprs[which(rnaseqExprs$entrezID!="NA"),]
 # Max expression between transcripts
 n_occur <- data.frame(table(rnaseqExprs$entrezID))
 uniques <- n_occur[n_occur$Freq == 1,]$Var1
-geneIDs <- unique(rnaseqExprs$entrezID[which(duplicated(rnaseqExprs$entrezID)==TRUE)])
-for(geneID in geneIDs){
-  # Mean
-  #i <- which(rnaseqExprs$entrezID==geneIDs)
-  #min <- which.min(rnaseqExprs[i,]$val)
-  #rnaseqExprs <- rnaseqExprs[-i[min],]
-  # Sum
+dupls <- n_occur[n_occur$Freq > 1,]$Var1
+max_ind <- c()
+for(geneID in dupls){
+  # Max
   i <- which(rnaseqExprs$entrezID==geneID)
-  sum <- sum(rnaseqExprs[i,]$val)
-  newrow <- rnaseqExprs[i[1],]
-  newrow$val <- sum
-  rnaseqExprs <- rnaseqExprs[-i,]
-  rnaseqExprs = rbind(rnaseqExprs,newrow)
+  max <- which.max(rnaseqExprs[i,]$val)
+  max_ind <- c(max_ind, i[max])
+  # Sum
+  #i <- which(rnaseqExprs$entrezID==geneID)
+  #sum <- sum(rnaseqExprs[i,]$val)
+  #newrow <- rnaseqExprs[i[1],]
+  #newrow$val <- sum
+  #rnaseqExprs <- rnaseqExprs[-i,]
+  #rnaseqExprs = rbind(rnaseqExprs,newrow)
 }
  
-# Check what in top expressed genes
-#rnaseqExprs1 <- rnaseqExprs
-#rnaseqExprs1[which(rnaseqExprs1$val==max(rnaseqExprs1$val)),]
+rnaseqExprsNoDupls <- rnaseqExprs[rnaseqExprs$entrezID %in% uniques,]
+rnaseqExprsNoDupls <- rbind(rnaseqExprsNoDupls, rnaseqExprs[max_ind,])
+rnaseqExprs <- rnaseqExprsNoDupls
 
 rnaseqExprs$val <- unlist(lapply(rnaseqExprs$val, log2))
-write.table(rnaseqExprs, "../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", quote=FALSE)
+write.table(rnaseqExprs, "../rnaseq/rnaseq_data_processed_max_long.tsv", sep="\t", quote=FALSE)
