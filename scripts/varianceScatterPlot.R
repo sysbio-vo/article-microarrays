@@ -6,7 +6,7 @@ scatterPlot <- function(df, title, ranges) {
   maxy=ranges[4]
   
   commonTheme = list(labs(x="log2 FPKM",
-                          y="SD of probesets groups", size=16),
+                          y="SD of probesets groups SD", size=16),
                      theme_bw()+
                        theme(legend.position="none",
                              plot.margin=unit(c(5,5,5,5),"mm"),

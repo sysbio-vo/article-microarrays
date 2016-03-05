@@ -15,6 +15,7 @@ freq_list <- data.frame()
 varplot_list <- c()
 simple=FALSE
 varofvar=TRUE
+bootstrap=FALSE
 
 # Generate aggregated microarray-rnaseq expression files for plots feeding
 for (i in 1:length(studies$ID)) {
@@ -57,13 +58,17 @@ for (i in 1:length(studies$ID)) {
 
   probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID %in% dupls$Var1),]
   eset <- eset[which(rownames(eset) %in% probesetsID_EntrezID$PROBEID),]
-  eset$ENTREZID <- probesetsID_EntrezID$ENTREZID
   if (simple) {
     eset <- data.frame(val=rowMeans(eset), row.names=rownames(eset))
+    eset$ENTREZID <- probesetsID_EntrezID$ENTREZID
   }
   if (bootstrap) {
+    eset$ENTREZID <- probesetsID_EntrezID$ENTREZID
     eset <- melt(eset)
     eset <- eset[,-2] 
+  }
+  if (varofvar) {
+    eset$ENTREZID <- probesetsID_EntrezID$ENTREZID
   }
 
   rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
@@ -103,7 +108,7 @@ for (i in 1:length(studies$ID)) {
 }
 
 pl <- plot_grid(plotlist=varplot_list, ncol=2, nrow=2, align="v")
-save_plot("../plots/onetomany_bootstrap_variance_scatterplot.pdf", pl,
+save_plot("../plots/onetomany_varofvar_scatterplot.pdf", pl,
           base_height=4, base_aspect_ratio=1.5, nrow=2, ncol=2)
 
 save_plot("../plots/onetomany_varofvar_scatterplot.pdf", new_plot,
