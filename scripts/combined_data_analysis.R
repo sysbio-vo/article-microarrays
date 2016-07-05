@@ -6,14 +6,14 @@ library(ggfortify)
 
 pipe_type = "maxoverall"
 
-pdata <-read.table("../pdata/combined_pdata_grade.tsv", header=TRUE, sep="\t")
+pdata <-read.table("../pdata/combined_pdata.tsv", header=TRUE, sep="\t")
 eset<-read.table(paste("../combined/combined_expression_", pipe_type,".tsv", sep=""), header=TRUE)
 pdata$Grade <- as.character(pdata$Grade)
 pdata <- pdata[pdata$SampleAccessionNumber %in% colnames(eset),]
 
 pca = prcomp(t(eset))
 
-title <- ggdraw() + draw_label("All samples", fontface='bold')  
+title <- ggdraw() + draw_label("PCA plot of combined microarray dataset. Max pipeline", fontface='bold')  
 pl1 <- autoplot(pca, data = pdata, colour="CancerType")
 pl2 <- autoplot(pca, data = pdata, colour="Grade")
 pl <- plot_grid(pl1, pl2, ncol=2, align="hv")
@@ -32,9 +32,9 @@ pl3 <- plot_grid(title, pl3, ncol=1, rel_heights=c(0.1, 1))
 pl <- plot_grid(pl, pl3, nrow=2)
 
 # Save plot for manual quality control
-save_plot(paste("../plots/combined_PCA_br.pdf", sep=""),
-          pl, base_height=9,
-          base_aspect_ratio=1.3,
+save_plot(paste("../plots/combined_PCA.pdf", sep=""),
+          pl, base_height=5,
+          base_aspect_ratio=2.3,
           nrow=1)
 
 pdata.grade3 <-pdata[which(pdata$Grade=="3"),]

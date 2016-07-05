@@ -1,4 +1,3 @@
-pdata/
 plots/
 raws/
 preprocessed/
@@ -10,3 +9,6 @@ rnaseq/
 combined_exprs/
 combined/
 allsamples_exprs/
+scripts/.RData
+scripts/.Rhistory
+
