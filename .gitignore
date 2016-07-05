@@ -2,9 +2,10 @@ plots/
 raws/
 preprocessed/
 exprs/
-general/
+general/*
+!general/studies.tsv
+!general/studies_idat.tsv
 RNA-seq/
-scores/
 rnaseq/
 combined_exprs/
 combined/
