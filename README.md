@@ -3,7 +3,7 @@
 To reproduce the results you will need the following structure of directories:
 
 ```
-project
+article-microarrays
 │   README.md
 └───allsamples_exprs
 └───combined
