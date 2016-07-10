@@ -48,3 +48,5 @@ For array versus array comparison use `arrays_comparison.R` script, for studying
 Use `brainarray.R` and  `max_mean_random_scores.R` to process datasets accroding to each pipeline and average across samples. Alternatively, use files in `exprs/` folder instead.
 
 Use `pipelines_analysis.R` to generate plots for datasets processed with different pipelines comparison, and `combined_data_analysis.R` to compared datasets, combined within each pipeline.
+
+Feel free to create issues if you have troubles executing the scripts or installing libraries used in the scripts.
