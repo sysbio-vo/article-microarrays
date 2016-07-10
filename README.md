@@ -25,11 +25,11 @@ article-microarrays
 └───scripts
 ```
 
-Not all the scripts are meant to launch in one go, read each script before executing. If you have troubles installing Brainarray CDF manually, use `install.brainarray.R` script.
+Not all the scripts are meant to be launched in one go, read each script before executing. If you have troubles installing Brainarray CDFs manually, use `install.brainarray.R` script.
 
 #### RNA-seq data
 
-Use scripts in `RNA-seq/` folder in order to download and aseemble the data (change scripts in case you use some task manager etc), then use `rnaseq_assemble.R` to combine and average across samples. Alternatively, use already processed data in  `rnaseq/` folder.
+Use scripts in `RNA-seq/` folder in order to download and assemble the data (change scripts in case you use some task manager etc), then use `rnaseq_assemble.R` to combine and average across samples. Alternatively, use already processed data in  `rnaseq/` folder.
 
 #### Microarray data
 
@@ -37,14 +37,14 @@ Download raw Affymetrix and non-normalized Illumina data into corresponding subf
 
 Use `generate_common_genes_list.R` to generate common genes list needed in most of the scripts.
 
-Use `combine.R` script to generate combined microarray dataset, which needs for futher analysis. This script also generates intermediate files, needed for `arrays_comparison.R`.
+Use `combine.R` script to generate combined microarray datasets, which are needed for futher analysis. This script also generates intermediate files, needed for `arrays_comparison.R`.
 
-If you wish to test tranformation and normalization methods for Illumina raw bead-level data, use `raw_illumina_preprocessing.R` script and `raw/047_20150203_Tchou_CAFs.zip` file, which you should put into `raw/GSE37614` folder. Alternatively, you can create plot using already generated files for this dataset in folder `exprs/`. See the script for details.
+If you wish to test tranformation and normalization methods for Illumina raw bead-level data, use `raw_illumina_preprocessing.R` script and `raw/047_20150203_Tchou_CAFs.zip` file, which you should put into `raw/GSE37614` folder. Alternatively, you can create plots using already generated files for this dataset in folder `exprs/`. See the script for details.
 
-For array versus comparison use `arrays_comparison.R` script, for studying many-to-one probesets groups variation use `variation_analysis.R`
+For array versus array comparison use `arrays_comparison.R` script, for studying many-to-one probesets groups variation use `variation_analysis.R`
 
 #### Pipelines
 
-Use `brainarray.R` and  `max_mean_random_scores.R` to averaged across samples datasets for each pipeline. Alternatively, do nothing and use files in `exprs/` folder.
+Use `brainarray.R` and  `max_mean_random_scores.R` to process datasets accroding to each pipeline and average across samples. Alternatively, use files in `exprs/` folder instead.
 
 Use `pipelines_analysis.R` to generate plots for datasets processed with different pipelines comparison, and `combined_data_analysis.R` to compared datasets, combined within each pipeline.
