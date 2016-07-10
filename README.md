@@ -24,3 +24,10 @@ article-microarrays
 └───scores
 └───scripts
 ```
+
+### RNA-seq data
+
+Use scripts in `RNA-seq` folder in order to download and aseemble the data (change scripts in case you use some task manager etc), then use `rnaseq_assemble.R` to combine and average across samples. Alternatively, use already processed data in  `rnaseq` folder.
+
+### Microarray data
+
