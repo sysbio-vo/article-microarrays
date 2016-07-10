@@ -1,7 +1,8 @@
 plots/
 raws/*
 !raws/047_20150203_Tchou_CAFs.zip
-preprocessed/
+preprocessed/*
+!preprocessed/*.tar.gz
 general/*
 !general/studies.tsv
 !general/studies_idat.tsv
