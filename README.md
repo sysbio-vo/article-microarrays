@@ -25,7 +25,7 @@ article-microarrays
 └───scripts
 ```
 
-Not all the scripts are meant to launch in one go, read each script before executing.
+Not all the scripts are meant to launch in one go, read each script before executing. If you have troubles installing Brainarray CDF manually, use `install.brainarray.R` script.
 
 #### RNA-seq data
 
