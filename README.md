@@ -31,3 +31,6 @@ Use scripts in `RNA-seq` folder in order to download and aseemble the data (chan
 
 #### Microarray data
 
+Download raw Affymetrix and non-normalized Illumina data into corresponding subfolders in `raw` folder. Use `preprocessing_affymetrix.R` and `preprocessing_illumina.R` scripts to pre-process and normalize the data, instead use zipped datasets in `preprocessed` folder.
+
+If you wish to test tranformation and normalization methods for Illumina raw bead-level data, use `raw_illumina_preprocessing.R` script and `raw/047_20150203_Tchou_CAFs.zip` file, which you should put into `raw/GSE37614` folder. Alternatively, you can create plot using already generated files for this dataset in folder `exprs`. See the script for details.
