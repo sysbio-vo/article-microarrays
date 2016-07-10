@@ -84,29 +84,29 @@ methods <- data.frame(method=c("vsn", "quantile", "neqc"),
                     transform=c("none", "log2", "none"))
 scatterplot_list <- c()
 for (j in 1:nrow(methods)) {
-   # Transform and normalize with one of the methods
-   N.data <- normaliseIllumina(channel(raw.data, "Green"),
+  # Transform and normalize with one of the methods
+  #N.data <- normaliseIllumina(channel(raw.data, "Green"),
                                method=as.character(methods[j,]$method), transform=as.character(methods[j,]$transform))
-   # Subset the probesets and choose TNBC samples only
-   indices <- which(rownames(N.data) %in% probesetsID_EntrezID$PROBEID)
-   N.data <- exprs(N.data)[indices, ]
-   N.data <- N.data[,which(pdata$Subs=="Yes")]
-   # Collapse rows
-   collapsed = collapseRows(N.data, probesetsID_EntrezID$ENTREZID, probesetsID_EntrezID$PROBEID, method="MaxMean")
-   # Intersect eset and rnaseq
-   eset <-collapsed$datETcollapsed
-   rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
-   eset <- eset[rownames(eset) %in% rnaseq$entrezID,]
-   eset <- data.frame(val=rowMeans(eset), row.names=rownames(eset))
-   rownames(rnaseq) <- rnaseq$entrezID
-   rnaseq <- rnaseq[which(rownames(rnaseq) %in% rownames(eset)),]
-   rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(eset))),]
-   # Assemble joint dataset
-   exprs <- data.frame(row.names=rownames(eset), eset=eset$val, rnaseq=rnaseq$val)
-   write.table(exprs, paste("../exprs/", studies[i]$ID, "_exprs_max_", methods[j,]$method, ".tsv", sep=""), sep="\t", quote=FALSE)
+  # Subset the probesets and choose TNBC samples only
+  #indices <- which(rownames(N.data) %in% probesetsID_EntrezID$PROBEID)
+  #N.data <- exprs(N.data)[indices, ]
+  #N.data <- N.data[,which(pdata$Subs=="Yes")]
+  # Collapse rows
+  #collapsed = collapseRows(N.data, probesetsID_EntrezID$ENTREZID, probesetsID_EntrezID$PROBEID, method="MaxMean")
+  # Intersect eset and rnaseq
+  #eset <-collapsed$datETcollapsed
+  #rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
+  #eset <- eset[rownames(eset) %in% rnaseq$entrezID,]
+  #eset <- data.frame(val=rowMeans(eset), row.names=rownames(eset))
+  #rownames(rnaseq) <- rnaseq$entrezID
+  #rnaseq <- rnaseq[which(rownames(rnaseq) %in% rownames(eset)),]
+  #rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(eset))),]
+  # Assemble joint dataset
+  #exprs <- data.frame(row.names=rownames(eset), eset=eset$val, rnaseq=rnaseq$val)
+  #write.table(exprs, paste("../exprs/", studies[i]$ID, "_exprs_max_", methods[j,]$method, ".tsv", sep=""), sep="\t", quote=FALSE)
 
    # If you need to re-render plots, just load the datasets saved before and comment all above
-#   exprs <- read.table(paste("../exprs/", studies[i]$ID, "_exprs_max_", methods[j,]$method, ".tsv", sep=""), sep="\t", header=TRUE)
+  exprs <- read.table(paste("../exprs/", studies[i]$ID, "_exprs_max_", methods[j,]$method, ".tsv", sep=""), sep="\t", header=TRUE)
   
   # Prepare scatterplot
   # Fit linear and cubic functions: 
