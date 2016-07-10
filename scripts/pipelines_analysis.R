@@ -82,7 +82,7 @@ corplot_list = list()
 
 ### Generating plots section
 
-# Cycle through the all the pipelines
+# Cycle through all the pipelines
 for (i in 1:length(pipelines)) {
   # Just for simplicity of usage
   eset <- pipelines[[i]]@dataset@exprs$eset
@@ -101,10 +101,12 @@ for (i in 1:length(pipelines)) {
     new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(2, 14, -7, 10))
   }
   scatterplot_list <- c(scatterplot_list, list(new_plot))
-  # Partial correlation plot
+  # Partial correlation plot. This was not included in the paper,
+  # too unreliable because of almost random constants, see the partialCorPlot function
 #  corPlot <- partialCorPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name))
 #  corplot_list <- c(corplot_list, list(corPlot))
 
+  # Commented this, because it is really computationally heavy, uncomment if needed
   ## Diagnostic plots
 #  diagPlts<-diagPlot(lin)
 #  pl1 <- plot_grid(plotlist=diagPlts, ncol=2, align="hv")
@@ -119,8 +121,8 @@ for (i in 1:length(pipelines)) {
 #            pl, base_width=5, nrow = 2)
   
   # Correlation data frame
-#   pearson[nrow(pearson)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq), 3), pipelines[[i]]@dataset@ID)
-#   spearman[nrow(spearman)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq, method="spearman"), 3), pipelines[[i]]@dataset@ID)
+  pearson[nrow(pearson)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq), 3), pipelines[[i]]@dataset@ID)
+  spearman[nrow(spearman)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq, method="spearman"), 3), pipelines[[i]]@dataset@ID)
 }
 
 ## Scatter plots

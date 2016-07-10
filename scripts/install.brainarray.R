@@ -32,7 +32,8 @@ install.brainarray <- function(array,
                                force.download = FALSE,
                                use.temp.dir = TRUE,
                                path) {
-  array <- "hgu133plus2";
+  #array <- "hgu133plus2"
+  #array <- "hugene10st"
   #force.reinstall <- TRUE; force.download <- TRUE; use.temp.dir <- TRUE
 
   # Construct the file names used

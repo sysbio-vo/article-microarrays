@@ -19,6 +19,8 @@ studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 genes_common <- read.table("../general/common_genes_list.txt", sep = "\t", header = TRUE)
 
 # Generate aggregated microarray-rnaseq expression files for plots feeding
+# Didn't wrap it up in 'for (pipe_type in pipe_types)' cycle for testing purposes, but feel free
+# to do it. Don't forget that there is no brainarray pipeline for Illumina
 for (i in 1:length(studies$ID)) {
   # Reading phenodata
   pdata <-read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header=TRUE, sep="\t")
@@ -103,9 +105,10 @@ for (i in 1:length(studies$ID)) {
   }
   # Select only common genes for all the platforms and pipelines
   eset <- eset[rownames(eset) %in% genes_common$ENTREZID,]
-  write.table(eset, paste("../full_exprs/", studies[i,]$ID, "_allsamples_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
+  write.table(eset, paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
 }
 
+# You need to generate all the datasets in allsamples_exprs folder before executing this
 for (pipe_type in pipe_types) {
   eset.all <- data.frame()
   pdata.all <- data.frame()
@@ -116,7 +119,7 @@ for (pipe_type in pipe_types) {
   }
   for (i in 1:len) {
     pdata <-read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header=TRUE, sep="\t")
-    eset<-read.table(paste("../full_exprs/", studies[i,]$ID, "_allsamples_", pipe_type, ".tsv", sep=""), header=TRUE)
+    eset<-read.table(paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_", pipe_type, ".tsv", sep=""), header=TRUE)
     if (nrow(eset.all)==0) {
       eset.all <- eset
       pdata.all <- pdata
@@ -158,6 +161,7 @@ for (pipe_type in pipe_types) {
   write.table(exprs, paste("../combined_exprs/combined_exprs_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
 }
 
+# One-to-many genes here are union of one-to-many genes in all the platforms
 otmGenes <- c()
 for (i in 1:length(studies$ID)) {
   otm <- read.table(paste("../general/onetomany_genes_", studies[i,]$platformAbbr, ".txt", sep=""), header = TRUE, sep = "\t")

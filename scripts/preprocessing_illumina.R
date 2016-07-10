@@ -40,6 +40,6 @@ pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
 save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA.pdf", sep=""),
           pl)
 
-probesetsID <- rownames(exprs(lumi.N))
-probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, ".db", sep="")), probesetsID, "ENTREZID")
+#probesetsID <- rownames(exprs(lumi.N))
+#probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, ".db", sep="")), probesetsID, "ENTREZID")
 

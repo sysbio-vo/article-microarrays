@@ -11,6 +11,8 @@ studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 genes_common <- read.table("../general/common_genes_list.txt", sep = "\t", header = TRUE)
 
 # Generate aggregated microarray-rnaseq expression files for plots feeding
+# Didn't wrap it up in 'for (pipe_type in pipe_types)' cycle for testing purposes and
+# because it takes too much time on my laptop. So execute the cycle for all the pipelines.
 for (i in 1:length(studies$ID)) {
   # Reading phenodata
   pdata <-read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header=TRUE, sep="\t")

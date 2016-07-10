@@ -35,6 +35,7 @@ eset2.tnbc <- data.frame(val=rowMeans(eset2.tnbc), row.names=rownames(eset2.tnbc
 
 df1 <- data.frame(eset=eset1.tnbc$val, rnaseq=eset2.tnbc$val)
 
+# This has nothing to do with rna-seq data, it' just the name of the variable
 rnaseq <- df1$rnaseq
 eset <- df1$eset
 lin<-lm(rnaseq~eset)
@@ -43,6 +44,7 @@ cub<-lm(rnaseq~eset+I(eset^2)+I(eset^3))
 pl1 <- scatterPlot(df1, paste(studies[1,]$ID, " versus ", studies[2,]$ID, sep=""),
                         lin, cub, c(2, 15, 2, 15))
 
+# hgu versus hugene, brainarray pipeline
 eset1<-read.table(paste("../allsamples_exprs/", studies[1,]$ID, "_allsamples_brainarray.tsv", sep=""), header=TRUE)
 eset1.tnbc <- eset1[,colnames(eset1) %in% pdata1.tnbc$SampleAccessionNumber]
 

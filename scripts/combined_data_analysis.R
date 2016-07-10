@@ -37,6 +37,7 @@ save_plot(paste("../plots/combined_PCA.pdf", sep=""),
           base_aspect_ratio=2.3,
           nrow=1)
 
+# In case one is interested in per grade representation
 pdata.grade3 <-pdata[which(pdata$Grade=="3"),]
 eset.grade3 <- eset[,colnames(eset) %in% pdata.grade3$SampleAccessionNumber]
 pca.grade3 = prcomp(t(eset.grade3))

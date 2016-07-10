@@ -17,6 +17,8 @@ simple=FALSE
 varofvar=TRUE
 bootstrap=FALSE
 
+# In general it looks into many-to-one probesets groups variance
+
 # Generate aggregated microarray-rnaseq expression files for plots feeding
 for (i in 1:length(studies$ID)) {
   # Reading expression data

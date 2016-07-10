@@ -15,7 +15,7 @@ library(cowplot)
 # Load studies description
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
-# Change this to appropriate index
+# Change this to index you need
 i = affy[3]
 
 ## Affymetrix data preprocessing
@@ -23,11 +23,11 @@ i = affy[3]
 pd <- read.AnnotatedDataFrame(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""))
 affyData = ReadAffy(phenoData=pd, sampleNames=pd$SampleAccessionNumber, filenames=as.character(rownames(pd)),
                     celfile.path=paste("../raws/", studies[i,]$ID, sep=""))
-# Affymetrix probesets. RMA
+# Affymetrix probesets
 #affyData@cdfName <- "HG-U133_Plus_2"
 #affyData@cdfName <- "HuGene-1_0-st-v1"
 eset = rma(affyData)
-# Brainarray probesets. RMA
+# Brainarray probesets. Change according to Affymetrix platform of the dataset
 #affyData@cdfName <- "hgu133plus2hsentrezgcdf"
 affyData@cdfName <- "hugene10sthsentrezgcdf"
 eset.br = rma(affyData)
@@ -40,6 +40,8 @@ write.table(exprs(eset.br), paste("../preprocessed/", studies[i,]$ID, "_preproce
 pData(eset)$ScanDate <- str_replace_all(eset@protocolData@data$ScanDate, "T", " ")
 pData(eset)$ScanDate <- sapply(strsplit(pData(eset)$ScanDate, split=' ', fixed=TRUE), function(x) (x[1]))
 pData(eset.br)$ScanDate <- pData(eset)$ScanDate
+
+# Sometimes the scan date is in strange format, try this also
 #pData(eset.br)$ScanDate <- substr(pData(eset.br)$ScanDate, 1, 7)
 #pData(eset)$ScanDate <- substr(pData(eset)$ScanDate, 1, 7)
 
@@ -63,11 +65,8 @@ pl <- plot_grid(pl, pl3, nrow=2, align="hv")
 save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA_nobatch.pdf", sep=""),
           pl, base_width=10, nrow=2)
 
-## In case smth is wrong with PCA plots perform next steps.
-## WARNING. You'll have to change some parts/reload data/save data again, cause it's always depends on the
-## particular dataset.
 
-# Batch-effect removal
+# Batch-effect removal. Perform only if needed.
 
 # Eliminate samples, which are the single representation of particular batch. Reload data after that
 # with new phenoData file, cause ExpressionSet subsetting works in a weird way
@@ -87,8 +86,14 @@ exprs(eset.br) <- combat_edata
 combat_edata = ComBat(dat=exprs(eset), batch=batch, mod=mod, par.prior=TRUE, prior.plots=FALSE)
 exprs(eset) <- combat_edata
 
+# Save affy and brain expression sets after batch-effect removal
+write.table(exprs(eset), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
+write.table(exprs(eset.br), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
+
 # In case not all the TNBC samples are clustered together
 # perform manual step for outliers determination within TNBC subtype based on PCA plots
+# However, pdata files already contain Outlier variable, therefor you can skip this and use
+# ready pdata files instead
 pd.tnbc <- pd[pd@data$CancerType=="TNBC"]
 pca.tnbc <- pca.br$x[which(rownames(pca.br$x) %in% pd.tnbc@data$SampleAccessionNumber),]
 outliers <- rownames(pca.tnbc[which(pca.tnbc[,1]<(37)),])
