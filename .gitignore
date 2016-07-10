@@ -11,7 +11,6 @@ RNA-seq/*
 !RNA-seq/run.sh
 !RNA-seq/pdata_GSE58135.txt
 !RNA-seq/Initiate_RNASeq_An.R
-rnaseq/
 combined_exprs/
 combined/
 allsamples_exprs/
