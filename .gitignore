@@ -1,5 +1,6 @@
 plots/
-raws/
+raws/*
+!raws/047_20150203_Tchou_CAFs.zip
 preprocessed/
 exprs/
 general/*
