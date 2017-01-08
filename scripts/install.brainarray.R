@@ -26,15 +26,14 @@
 # hardcoded functionality of this function!
 
 install.brainarray <- function(array,
-                               version = "19.0.0",
+                               version = "21.0.0",
                                type = "entrezg",
-                               force.reinstall = FALSE,
-                               force.download = FALSE,
+                               force.reinstall = TRUE,
+                               force.download = TRUE,
                                use.temp.dir = TRUE,
                                path) {
   #array <- "hgu133plus2"
   #array <- "hugene10st"
-  #force.reinstall <- TRUE; force.download <- TRUE; use.temp.dir <- TRUE
 
   # Construct the file names used
   files <- paste0(array, "hs", type, c("cdf_", "probe_", ".db_"), version, ".tar.gz")
