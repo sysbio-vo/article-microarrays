@@ -6,98 +6,111 @@ library(hgu133plus2hsentrezgprobe)
 library(hgu133plus2hsentrezgcdf)
 library(hgu133plus2hsentrezg.db)
 # Other packages
+library(arrayQualityMetrics)
 library(affy)
+library(hgu133plus2cdf)
 library(sva)
 library(stringr) 
 library(ggplot2)
 library(ggfortify)
 library(cowplot)
+source("plots_utils.R")
+
 # Load studies description
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
 # Change this to index you need
-i = affy[3]
+i = affy[1]
 
+READ.RAWS = FALSE
+
+if (READ.RAWS) {
 ## Affymetrix data preprocessing
 # Load pdata and CEL files
 pd <- read.AnnotatedDataFrame(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""))
+pd.plain <- read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header = TRUE, sep = "\t")
 affyData = ReadAffy(phenoData=pd, sampleNames=pd$SampleAccessionNumber, filenames=as.character(rownames(pd)),
                     celfile.path=paste("../raws/", studies[i,]$ID, sep=""))
-# Affymetrix probesets
-#affyData@cdfName <- "HG-U133_Plus_2"
-#affyData@cdfName <- "HuGene-1_0-st-v1"
-eset = rma(affyData)
-# Brainarray probesets. Change according to Affymetrix platform of the dataset
-#affyData@cdfName <- "hgu133plus2hsentrezgcdf"
-affyData@cdfName <- "hugene10sthsentrezgcdf"
-eset.br = rma(affyData)
+
+# Add ScanDate to pdata
+pd.plain$ScanDate <- str_replace_all(affyData@protocolData@data$ScanDate, "T", " ")
+pd.plain$ScanDate <- sapply(strsplit(pd.plain$ScanDate, split=' ', fixed=TRUE), function(x) (x[1]))
+# Sometimes the scan date is in strange format, try this also
+#pd.plain$ScanDate <- substr(pd.plain$ScanDate, 1, 7)
+
+write.table(pd.plain, paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), sep="\t", quote=FALSE)
+
+if (studies$platformAbbr[i]=="hgu133plus2") {
+  # Affymetrix probesets
+  affyData@cdfName <- "HG-U133_Plus_2"
+  eset = rma(affyData)
+  # Brainarray probesets
+  affyData@cdfName <- "hgu133plus2hsentrezgcdf"
+  eset.br = rma(affyData)
+}
+
+if (studies$platformAbbr[i]=="hugene10st") {
+  # Affymetrix probesets
+  affyData@cdfName <- "HuGene-1_0-st-v1"
+  eset = rma(affyData)
+  # Brainarray probesets. Change according to Affymetrix platform of the dataset
+  affyData@cdfName <- "hugene10sthsentrezgcdf"
+  eset.br = rma(affyData)
+}  
+
 # Save affy and brain expression sets
-write.table(exprs(eset), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
-write.table(exprs(eset.br), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
+write.table(exprs(eset), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix_orig.tsv", sep=""),
+            sep="\t", quote=FALSE)
+write.table(exprs(eset.br), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray_orig.tsv", sep=""),
+            sep="\t", quote=FALSE)
+
+}
+
+exprs <-    read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix_orig.tsv", sep=""),
+                       sep="\t", header = TRUE)
+exprs.br <- read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray_orig.tsv", sep=""),
+                       sep="\t", header = TRUE)
+pd.plain <- read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header = TRUE, sep = "\t")
+
 
 ## QC
-# Add ScanDate to pdata
-pData(eset)$ScanDate <- str_replace_all(eset@protocolData@data$ScanDate, "T", " ")
-pData(eset)$ScanDate <- sapply(strsplit(pData(eset)$ScanDate, split=' ', fixed=TRUE), function(x) (x[1]))
-pData(eset.br)$ScanDate <- pData(eset)$ScanDate
-
-# Sometimes the scan date is in strange format, try this also
-#pData(eset.br)$ScanDate <- substr(pData(eset.br)$ScanDate, 1, 7)
-#pData(eset)$ScanDate <- substr(pData(eset)$ScanDate, 1, 7)
 
 # Perform PCA
-pca = prcomp(t(exprs(eset)))
-pca.br = prcomp(t(exprs(eset.br)))
-
-title <- ggdraw() + draw_label(paste("Affymetrix Probesets Definitions.", studies[i,]$ID), fontface='bold')  
-pl1 <- autoplot(pca, data = pData(eset), colour="CancerType")
-pl2 <- autoplot(pca, data = pData(eset), colour="ScanDate")
-pl <- plot_grid(pl1, pl2, ncol=2, align="hv")
-pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
-title <- ggdraw() + draw_label(paste("Brainarray Probesets Definitions.", studies[i,]$ID), fontface='bold')  
-pl1 <- autoplot(pca.br, data = pData(eset.br), colour="CancerType")
-pl2 <- autoplot(pca.br, data = pData(eset.br), colour="ScanDate")
-pl3 <- plot_grid(pl1, pl2, ncol=2, align="hv")
-pl3 <- plot_grid(title, pl3, ncol=1, rel_heights=c(0.1, 1))
-pl <- plot_grid(pl, pl3, nrow=2, align="hv")
+pl <- qcPCA(exprs, exprs.br, pd.plain, studies[i,]$ID)
 
 # Save plot for manual quality control
-save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA_nobatch.pdf", sep=""),
+save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA.pdf", sep=""),
           pl, base_width=10, nrow=2)
 
-
 # Batch-effect removal. Perform only if needed.
+BATCH = FALSE
+if (BATCH) {
+  batch = pd.plain$ScanDate
+  mod = model.matrix(~as.factor(CancerType), data=pd.plain)
+  
+  exprs.nobatch = ComBat(dat=exprs, batch=batch, mod=mod, par.prior=TRUE, prior.plots=FALSE)
+  exprs.br.nobatch = ComBat(dat=exprs.br, batch=batch, mod=mod, par.prior=TRUE, prior.plots=FALSE)
 
-# Eliminate samples, which are the single representation of particular batch. Reload data after that
-# with new phenoData file, cause ExpressionSet subsetting works in a weird way
-pdata = pData(eset.br)
-n_occur <- data.frame(table(pdata$ScanDate))
-uniques <- n_occur[n_occur$Freq == 1,]$Var1
-pdata <- pdata[-which(pdata$ScanDate %in% uniques),]
-pd@data <- pd@data[pd@data$SampleAccessionNumber %in% pdata$SampleAccessionNumber,]
-write.table(pd@data, paste("../pdata/pd_", studies[i,]$ID, ".tsv", sep=""), sep="\t", quote=FALSE)
+  pl <- qcPCA(exprs.nobatch, exprs.br.nobatch, pd.plain, studies[i,]$ID)
+  
+  # Save plot for manual quality control
+  save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA_nobatch.pdf", sep=""),
+            pl, base_width=10, nrow=2)
+  
+  # Save affy and brain expression sets after batch-effect removal
+  write.table(exprs.nobatch, paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
+  write.table(exprs.br.nobatch, paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
+}
 
-# Remove batch effect
-batch = pData(eset.br)$ScanDate
-mod = model.matrix(~as.factor(CancerType), data=pData(eset.br))
-combat_edata = ComBat(dat=exprs(eset.br), batch=batch, mod=mod, par.prior=TRUE, prior.plots=FALSE)
-exprs(eset.br) <- combat_edata
+# AQM to detect outliers. Edit pdata manually if you want to mark particular samples.
+exprs.br <- read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""),
+                       sep="\t", header = TRUE)
+pd.plain <- read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), header = TRUE, sep = "\t")
+rownames(pd.plain) <- pd.plain$SampleAccessionNumber
 
-combat_edata = ComBat(dat=exprs(eset), batch=batch, mod=mod, par.prior=TRUE, prior.plots=FALSE)
-exprs(eset) <- combat_edata
-
-# Save affy and brain expression sets after batch-effect removal
-write.table(exprs(eset), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
-write.table(exprs(eset.br), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
-
-# In case not all the TNBC samples are clustered together
-# perform manual step for outliers determination within TNBC subtype based on PCA plots
-# However, pdata files already contain Outlier variable, therefor you can skip this and use
-# ready pdata files instead
-pd.tnbc <- pd[pd@data$CancerType=="TNBC"]
-pca.tnbc <- pca.br$x[which(rownames(pca.br$x) %in% pd.tnbc@data$SampleAccessionNumber),]
-outliers <- rownames(pca.tnbc[which(pca.tnbc[,1]<(37)),])
-pd@data$Outliers <- rep("NA", length(pd@data$SampleAccessionNumber))
-pd@data$Outliers[which(pd@data$SampleAccessionNumber %in% outliers)] <- "Yes"
-autoplot(pca.br, data = pData(pd), colour="Outliers")
-write.table(pd@data, paste("../pdata/pd_", studies[i,]$ID, ".tsv", sep=""), sep="\t", quote=FALSE)
+eset = ExpressionSet(assayData=as.matrix(exprs.br), phenoData = AnnotatedDataFrame(pd.plain))
+arrayQualityMetrics(expressionset = eset,
+                    outdir = paste("../plots/aqm/AQM_report_nobatch", studies[i,]$ID, sep=""),
+                    force = TRUE,
+                    do.logtransform = FALSE,
+                    intgroup = c("CancerType"))
