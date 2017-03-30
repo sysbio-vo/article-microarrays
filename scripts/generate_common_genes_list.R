@@ -41,7 +41,6 @@ for (i in ind) {
               col.names=c("ENTREZID"), row.names=FALSE)
   
   if (platform=="affymetrix") {
-    } else {
       # Brainarray probesets
       eset.br<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), header=TRUE)
       probesetsID <- rownames(eset.br)

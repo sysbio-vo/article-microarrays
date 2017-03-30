@@ -11,10 +11,10 @@ RNA-seq/SamplesRNASeq.txt
 RNA-seq/run.sh
 RNA-seq/pdata_GSE58135.txt
 RNA-seq/Initiate_RNASeq_An.R
-combined_exprs/
-combined/
 allsamples_exprs/
+allsamples_exprs_merged/
+arseq/
+arseq_merged
 scripts/.RData
 scripts/.Rhistory
-exprs/
 rnaseq/

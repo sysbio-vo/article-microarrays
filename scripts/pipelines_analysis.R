@@ -5,35 +5,35 @@ library(cowplot)
 library(plyr)
 library(ggplot2)
 # Loading custom scripts
-source("scatterPlot.R")
-source("diagnosticPlots.R")
-source("barPlot.R")
-source("partialCorPlot.R")
+source("plots_utils.R")
 
 ### Initial info section
 
 # Load studies description file
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
+
 # Define pipelines you want to analyze
 pipe_types <- c("brainarray", "max", "maxoverall", "mean", "scores", "random")
 #pipe_types <- c("brainarray", "bioconductor", "scores")
+
 # Define, which subset of genes you want to represent on plots
 plot_types <- c("all","onetoone","onetomany")
-plot_type <- plot_types[3]
+plot_type <- plot_types[1]
+
 # Define plot names based on current plot type
 if (plot_type=="all") {
-  barplot.name = "../plots/all_barplot.pdf"
-  scatterplot.name = "../plots/all_scatterplot.pdf"
+  barplot.name = "../plots/barPlots/all_barplot.pdf"
+  scatterplot.name = "../plots/scatterPlots/all_scatterplot.pdf"
   diagnosticplot.name = "_all_diagnosticplot_"
 }
 if (plot_type=="onetoone") {
-  barplot.name = "../plots/onetoone_barplot.pdf"
-  scatterplot.name = "../plots/onetoone_scatterplot.pdf"
+  barplot.name = "../plots/barPlots/onetoone_barplot.pdf"
+  scatterplot.name = "../plots/scatterPlots/onetoone_scatterplot.pdf"
   diagnosticplot.name = "_onetoone_diagnosticplot_"
 }
 if (plot_type=="onetomany") {
-  barplot.name = "../plots/onetomany_barplot.pdf"
-  scatterplot.name = "../plots/onetomany_scatterplot.pdf"
+  barplot.name = "../plots/barPlots/onetomany_barplot.pdf"
+  scatterplot.name = "../plots/scatterPlots/onetomany_scatterplot.pdf"
   diagnosticplot.name = "_onetomany_diagnosticplot_"
 }
 
@@ -50,9 +50,9 @@ for (i in 1:length(studies$ID)) {
     if (grepl("Illu", studies[i,]$platform) && pipe_type=="brainarray") {
     } else {
       if (pipe_type=="bioconductor") {
-        exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", "max", ".tsv", sep=""), header = TRUE, sep = "\t")
+        exprs <- read.table(paste("../arseq/", studies[i,]$ID, "_arseq_", "max", ".tsv", sep=""), header = TRUE, sep = "\t")
       } else {
-        exprs <- read.table(paste("../exprs/", studies[i,]$ID, "_exprs_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
+        exprs <- read.table(paste("../arseq/", studies[i,]$ID, "_arseq_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
       }        
       if (plot_type=="onetomany") {
         otmGenes <- read.table(paste("../general/onetomany_genes_", studies[i,]$platformAbbr, ".txt", sep=""), header = TRUE, sep = "\t")
@@ -85,7 +85,7 @@ corplot_list = list()
 # Cycle through all the pipelines
 for (i in 1:length(pipelines)) {
   # Just for simplicity of usage
-  eset <- pipelines[[i]]@dataset@exprs$eset
+  eset <- pipelines[[i]]@dataset@exprs$exprs
   rnaseq <- pipelines[[i]]@dataset@exprs$rnaseq
   # Fit linear and cubic functions:  
   lin<-lm(rnaseq~eset)
@@ -101,11 +101,11 @@ for (i in 1:length(pipelines)) {
     new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(2, 14, -7, 10))
   }
   scatterplot_list <- c(scatterplot_list, list(new_plot))
-  # Partial correlation plot. This was not included in the paper,
-  # too unreliable because of almost random constants, see the partialCorPlot function
-#  corPlot <- partialCorPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name))
-#  corplot_list <- c(corplot_list, list(corPlot))
 
+  # Correlation data frame
+  pearson[nrow(pearson)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq), 3), pipelines[[i]]@dataset@ID)
+  spearman[nrow(spearman)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq, method="spearman"), 3), pipelines[[i]]@dataset@ID)
+  
   # Commented this, because it is really computationally heavy, uncomment if needed
   ## Diagnostic plots
 #  diagPlts<-diagPlot(lin)
@@ -120,9 +120,6 @@ for (i in 1:length(pipelines)) {
 #  save_plot(paste("../plots/", pipelines[[i]]@dataset@ID, diagnosticplot.name, pipelines[[i]]@name,".pdf", sep=""),
 #            pl, base_width=5, nrow = 2)
   
-  # Correlation data frame
-  pearson[nrow(pearson)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq), 3), pipelines[[i]]@dataset@ID)
-  spearman[nrow(spearman)+1, ] <- c(pipelines[[i]]@name, round(cor(eset, rnaseq, method="spearman"), 3), pipelines[[i]]@dataset@ID)
 }
 
 ## Scatter plots
