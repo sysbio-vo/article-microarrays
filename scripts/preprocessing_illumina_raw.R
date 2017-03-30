@@ -9,6 +9,7 @@ library(beadarray)
 library(sva)
 source("scatterPlot.R")
 source("plots_utils.R")
+source("probes_utils.R")
 
 ## General
 studies <- read.table("../general/studies_idat.tsv", header = TRUE, sep = "\t")

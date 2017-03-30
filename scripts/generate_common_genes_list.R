@@ -9,7 +9,7 @@ library(hgu133plus2hsentrezg.db)
 library(hgu133plus2.db)
 library(hugene10sttranscriptcluster.db)
 library(illuminaHumanv4.db)
-#library(illuminaHumanv3.db)
+source("probes_utils.R")
 
 # Load studies description
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
@@ -31,20 +31,8 @@ for (i in ind) {
   
   eset<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_", platform, ".tsv", sep=""), header=TRUE)
   probesetsID <- rownames(eset)
-  # Get probesets ID to EntrezID mapping
-  if (studies[i,]$platformAbbr=="hugene10st") {
-    probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, "transcriptcluster.db", sep="")), probesetsID, "ENTREZID")
-  } else {
-    probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, ".db", sep="")), probesetsID, "ENTREZID")
-  }
   
-  # Delete NAs
-  probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]
-  # Delete probesets, which have multiple mappings to genes
-  n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
-  uniques <- n_occur[n_occur$Freq == 1,]$Var1
-  #doubles <- n_occur[n_occur$Freq > 1,]$Var1
-  probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$PROBEID %in% uniques),]
+  probesetsID_EntrezID <- removeMultimappedProbes(probesetsID, studies[i,]$platformAbbr, brainarray=FALSE)
   IDs <- c(IDs, list(probesetsID_EntrezID))  
   # Generate list of genes, represented by multiple probesets
   n_occur <- data.frame(table(probesetsID_EntrezID$ENTREZID))
@@ -52,15 +40,14 @@ for (i in ind) {
   write.table(dupls, paste("../general/onetomany_genes_", studies[i,]$platformAbbr,".txt", sep=""), sep="\t", quote=FALSE,
               col.names=c("ENTREZID"), row.names=FALSE)
   
-  # Brainarray probesets
-  eset.br<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), header=TRUE)
-  probesetsID <- rownames(eset.br)
-  probesetsID_EntrezID<-select(get(paste(studies[i,]$platformAbbr, "hsentrezg.db", sep="")), probesetsID, "ENTREZID")
-  probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]
-  n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
-  uniques <- n_occur[n_occur$Freq == 1,]$Var1
-  probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$PROBEID %in% uniques),]
-  IDs <- c(IDs, list(probesetsID_EntrezID))  
+  if (platform=="affymetrix") {
+    } else {
+      # Brainarray probesets
+      eset.br<-read.table(paste("../preprocessed/", studies[i,]$ID, "_preprocessed_brainarray.tsv", sep=""), header=TRUE)
+      probesetsID <- rownames(eset.br)
+      probesetsID_EntrezID <- removeMultimappedProbes(probesetsID, studies[i,]$platformAbbr, brainarray=TRUE)
+      IDs <- c(IDs, list(probesetsID_EntrezID))  
+  }
 }
 
 # Intersect among all the platforms
@@ -71,7 +58,7 @@ for (i in 2:length(IDs)) {
 
 # Intersect with scored probesets
 for (i in ind) {
-  probesetsID_EntrezID<-read.table(paste("../scores/", studies[i,]$platformAbbr, "_scores.tsv", sep=""), header=TRUE)
+  probesetsID_EntrezID <- read.table(paste("../scores/", studies[i,]$platformAbbr, "_scores.tsv", sep=""), header=TRUE)
   probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]
   n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
   uniques <- n_occur[n_occur$Freq == 1,]$Var1
