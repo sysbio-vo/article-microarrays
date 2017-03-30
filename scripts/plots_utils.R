@@ -17,3 +17,16 @@ qcPCA <- function(af, br, pd, study.id) {
   
   return(pl)
 }
+
+# PCA to compare datasets after RMA, check batches etc
+qcPCAilluraw <- function(exprs, pd, study.id) {
+  pca = prcomp(t(exprs))
+
+  title <- ggdraw() + draw_label(study.id, fontface='bold')  
+  pl1 <- autoplot(pca, data = pdata, colour="CancerType")
+  pl2 <- autoplot(pca, data = pdata, colour="Sentrix_ID")
+  pl <- plot_grid(pl1, pl2, ncol=2, align="hv")
+  pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
+
+  return(pl)
+}

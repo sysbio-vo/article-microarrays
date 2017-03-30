@@ -1,92 +1,77 @@
 library(cowplot)
 library(plyr)
 library(ggplot2)
-library(lumi)
 library(limma)
 library(illuminaHumanv4.db)
+library(arrayQualityMetrics)
 library(WGCNA)
-library(BioBase)
-library(lumidat)
 library(beadarray)
+library(sva)
 source("scatterPlot.R")
-# General
+source("plots_utils.R")
+
+## General
 studies <- read.table("../general/studies_idat.tsv", header = TRUE, sep = "\t")
 i = 1
 dir = paste("../raws/", studies[i,]$ID, sep="")
-pdata = read.table(paste("../pdata/", studies[i,]$ID, "_pdata.tsv", sep=""), sep="\t", head=TRUE)
+pdata = read.table(paste("../pdata/pdata_", studies[i,]$ID, ".tsv", sep=""), sep="\t", head=TRUE)
 idatfiles = dir(dir, pattern="idat", full.name=TRUE)
 bgxfile = dir("../general", pattern="bgx", full.name=TRUE)
 txtbgxfile = dir("../general", pattern="B.txt", full.name=TRUE)
 
-# We've tried several packages, but BeadArray was the most easy to use, so scroll to BeadArray section
-
-# Limma
-raw.data <- read.idat(idatfiles, bgxfile)
-N.data = neqc(raw.data)
-probesetsID_EntrezID<-select(illuminaHumanv4.db, N.data$genes$Probe_Id, "ENTREZID")
-probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]
-# Duplicate probes
-n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
-uniques <- n_occur[n_occur$Freq == 1,]$Var1
-probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$PROBEID %in% uniques),]
-# Subset EList
-indices <- which(N.data$genes$Probe_Id %in% probesetsID_EntrezID$PROBEID)
-N.data <- N.data[indices, ]
-limma.data <- N.data
-boxplot(limma.data$E)
-datET <- as.data.frame(N.data$E, row.names=N.data$genes$Probe_Id)
-datET <- datET[,which(pdata$Subs=="Yes")]
-
-# Lumidat
-
-raw.data <- lumiR.idat(idatfiles, probeID="ProbeID", manifestfile=txtbgxfile,
-                    detectionTh=0.0001, QC=TRUE)
-pData(raw.data) <- pdata
-T.data   <- lumiT(raw.data, method="vst")
-# The lumi package provides lumiB function for background correction. We sup-
-# pose the BeadStudio output data has been background corrected. Therefore, no
-# background correction used by default. A method ’bgAdjust’ is designed to ap-
-# proximate what BeadStudio does for background adjustment. In the case when
-# ’log2’ transform is used in the lumiT step, the background correction method
-# (’forcePositive’) will be automatically used, which basically adds an offset (minus
-# minimum value plus one) if there is any negative values to force all expression
-# values to be positive.
-N.data<-lumiN(T.data, method = "rsn")
-
-probesetsID_EntrezID <- select(illuminaHumanv4.db, rownames(N.data), "ENTREZID")
-probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]
-# Duplicate probes
-n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
-uniques <- n_occur[n_occur$Freq == 1,]$Var1
-probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$PROBEID %in% uniques),]
-# Subset EList
-indices <- which(rownames(N.data) %in% probesetsID_EntrezID$PROBEID)
-N.data <- exprs(N.data)[indices, ]
-lumi.data <- N.data
-boxplot(lumi.data)
-datET <- N.data
-datET <- datET[,which(pdata$Subs=="Yes")]
-
-# BeadArray
-
+## BeadArray
 raw.data <- readIdatFiles(idatfiles)
-probesetsID<-rownames(exprs(raw.data))
+raw.data@phenoData = AnnotatedDataFrame(pdata)
 
+## QC
+N.data <- normaliseIllumina(channel(raw.data, "Green"), method="neqc", transform="none")
+N.exprs <- exprs(N.data)
+pdata$Sentrix_ID <- as.character(pdata$Sentrix_ID)
+
+pl <- qcPCAilluraw(N.exprs, pdata, studies[i,]$ID)
+# Save plot for manual quality control
+save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA.pdf", sep=""),
+          pl, base_width=10)
+
+# Correct batch
+batch = pdata$Sentrix_ID
+mod = model.matrix(~as.factor(CancerType), data=pdata)
+N.exprs.nobatch = ComBat(dat=N.exprs, batch=batch, mod=mod, par.prior=TRUE, prior.plots=FALSE)
+
+pl <- qcPCAilluraw(N.exprs.nobatch, pdata, studies[i,]$ID)
+# Save plot for manual quality control
+save_plot(paste("../plots/qc/", studies[i,]$ID, "_PCA_nobatch.pdf", sep=""),
+          pl, base_width=10)
+
+exl = which(pdata$Outliers=="Yes")
+pdata <- pdata[-exl,]
+N.exprs.nobatch <- N.exprs.nobatch[,-exl]
+
+eset = ExpressionSet(assayData=as.matrix(N.exprs.nobatch), phenoData = AnnotatedDataFrame(pdata))
+arrayQualityMetrics(expressionset = eset,
+                    outdir = paste("../plots/aqm/AQM_report_nooutliers_", studies[i,]$ID, sep=""),
+                    force = TRUE,
+                    do.logtransform = FALSE,
+                    intgroup = c("CancerType"))
+
+# Get EntrezID
+probesetsID <- rownames(exprs(raw.data))
 probesetsID_EntrezID <- select(get(paste(studies[i,]$platformAbbr, ".db", sep="")), probesetsID, "ENTREZID")
 probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$ENTREZID!="NA"),]
-# Duplicate probes
+# Remove probes mapped to different genes
 n_occur <- data.frame(table(probesetsID_EntrezID$PROBEID))
 uniques <- n_occur[n_occur$Freq == 1,]$Var1
 probesetsID_EntrezID <- probesetsID_EntrezID[which(probesetsID_EntrezID$PROBEID %in% uniques),]
 
-# Subset EList
+# Normalization methods
 methods <- data.frame(method=c("vsn", "quantile", "neqc"),
                     transform=c("none", "log2", "none"))
+
 scatterplot_list <- c()
 for (j in 1:nrow(methods)) {
   # Transform and normalize with one of the methods
   #N.data <- normaliseIllumina(channel(raw.data, "Green"),
-                               method=as.character(methods[j,]$method), transform=as.character(methods[j,]$transform))
+  #                             method=as.character(methods[j,]$method), transform=as.character(methods[j,]$transform))
   # Subset the probesets and choose TNBC samples only
   #indices <- which(rownames(N.data) %in% probesetsID_EntrezID$PROBEID)
   #N.data <- exprs(N.data)[indices, ]

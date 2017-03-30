@@ -22,7 +22,7 @@ x.lumi <- lumiR(paste("../raws/", studies[i,]$ID, "/", studies[i,]$ID, "_non-nor
 x.lumi <- x.lumi[, -which(grepl("replicate", colnames(x.lumi)))]
 # Normalize
 lumi.T <- lumiT(x.lumi, method = 'log2')
-lumi.N<-lumiN(lumi.T, method = "quantile")
+lumi.N <- lumiN(lumi.T, method = "quantile")
 colnames(lumi.N) <- pd@data$SampleAccessionNumber
 # Save results into file
 write.table(exprs(lumi.N), paste("../preprocessed/", studies[i,]$ID, "_preprocessed_illumina.tsv", sep=""),

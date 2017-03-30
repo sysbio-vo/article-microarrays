@@ -20,7 +20,7 @@ source("plots_utils.R")
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 affy <- which(grepl("Affy", studies$platform))
 # Change this to index you need
-i = affy[1]
+i = affy[3]
 
 READ.RAWS = FALSE
 
@@ -110,7 +110,7 @@ rownames(pd.plain) <- pd.plain$SampleAccessionNumber
 
 eset = ExpressionSet(assayData=as.matrix(exprs.br), phenoData = AnnotatedDataFrame(pd.plain))
 arrayQualityMetrics(expressionset = eset,
-                    outdir = paste("../plots/aqm/AQM_report_nobatch", studies[i,]$ID, sep=""),
+                    outdir = paste("../plots/aqm/AQM_report_", studies[i,]$ID, sep=""),
                     force = TRUE,
                     do.logtransform = FALSE,
                     intgroup = c("CancerType"))
