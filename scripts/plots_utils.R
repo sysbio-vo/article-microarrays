@@ -44,7 +44,7 @@ barPlot <- function(df) {
   return(pl)
 }
 
-scatterPlot <- function(df, title, lin, cub, ranges) {
+scatterPlot <- function(df, title, lin, cub, ranges, labx="log2 probeset intensity", laby="log2 FPKM") {
   # TODO: replace the constants with passing arguments
   minx=ranges[1]
   maxx=ranges[2]
@@ -54,14 +54,13 @@ scatterPlot <- function(df, title, lin, cub, ranges) {
   r_lin <- summary(lin)$r.squared
   r_cub <- summary(cub)$r.squared
   
-  commonTheme = list(labs(x="log2 probeset intensity",
-                          y="log2 FPKM", size=16),
+  commonTheme = list(labs(x=labx, y=laby, size=16),
                      theme_bw()+
                        theme(legend.position="none",
                              plot.margin=unit(c(5,5,5,5),"mm"),
                              axis.text = element_text(size=18),
                              axis.title = element_text(size=16),
-                             plot.title = element_text(face="bold", size=18)))
+                             plot.title = element_text(face="bold", size=17)))
   
   p <- ggplot(data=df,aes(x=eset,y=rnaseq)) + 
     geom_point(alpha=0.3) +
