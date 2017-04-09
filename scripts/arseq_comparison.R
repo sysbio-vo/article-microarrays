@@ -102,10 +102,10 @@ pl <- plot_grid(pl, legend, ncol=2, rel_widths = c(2, 1))
 save_plot("../plots/barPlots/arseq_all_barplot.pdf", pl,
           base_height=7, base_width=6)
 
-## rnaseq vs rnaseq
+## Self: rnaseq vs rnaseq
 
 rnaseq.first <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
-rnaseq.second <- read.table("../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_long.tsv", sep="\t")
+rnaseq.second <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread.tsv", sep="\t")
 
 rnaseq.first <- rnaseq.first[rownames(rnaseq.first) %in% rownames(rnaseq.second), ]
 rnaseq.second <- rnaseq.second[rownames(rnaseq.second) %in% rownames(rnaseq.first), ]
@@ -119,8 +119,6 @@ rnaseq.first <- data.frame(val=rowMeans(rnaseq.first), row.names=rownames(rnaseq
 rnaseq.second <- data.frame(val=rowMeans(rnaseq.second), row.names=rownames(rnaseq.second))
 rnaseq.first$val <- rnaseq.first$val+0.1
 rnaseq.first$val <- log(rnaseq.first$val, 2)
-rnaseq.second$val <- rnaseq.second$val+0.1
-rnaseq.second$val <- log(rnaseq.second$val, 2)
 
 rnaseq <- rnaseq.first$val
 eset <- rnaseq.second$val
@@ -129,7 +127,7 @@ lin<-lm(rnaseq~eset)
 cub<-lm(rnaseq~eset+I(eset^2)+I(eset^3))  
 df <- data.frame(eset=eset, rnaseq=rnaseq)
 
-pl <- scatterPlot(df, "RNA-seq vs RNA-seq", lin, cub, c(-4, 12, -4, 12), labx="log2 FPKM")
-save_plot("../plots/scatterPlots/rnaseq_vs_rnaseq_scatterplot.pdf", pl,
+pl <- scatterPlot(df, "RNA-seq vs RNA-seq", lin, cub, c(-8, 12, -4, 12), labx="log2 CPM")
+save_plot("../plots/scatterPlots/self_rnaseq_vs_rnaseq_scatterplot.pdf", pl,
           base_height=6,
           base_aspect_ratio=1)
