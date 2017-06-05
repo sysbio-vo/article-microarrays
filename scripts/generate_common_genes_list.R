@@ -66,7 +66,11 @@ for (i in ind) {
 }
 
 # Intersect with RNA-seq
-rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
-common <- intersect(common, rnaseq$entrezID)
+rnaseq.tophat <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
+rnaseq.subread <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread.tsv", sep="\t")
+
+common <- intersect(common, rownames(rnaseq.tophat))
+common <- intersect(common, rownames(rnaseq.subread))
+
 write.table(common, "../general/common_genes_list.txt", sep="\t", quote=FALSE,
             col.names=c("ENTREZID"), row.names=FALSE)

@@ -38,10 +38,9 @@ mergeWithRNAseq <- function(exprs, rnaseq, pdata, common_genes) {
   exprs <- data.frame(val=rowMeans(exprs), row.names=rownames(exprs))
 
   # Select common genes with rna-seq
-  rnaseq <- rnaseq[rnaseq$entrezID %in% rownames(exprs),]
-  rownames(rnaseq) <- rnaseq$entrezID
+  rnaseq <- rnaseq[rownames(rnaseq) %in% rownames(exprs),]
   rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(exprs))),]
-  rnaseq <- rnaseq[-1]
+  rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
 
   # Assemble joint dataset
   arseq <- data.frame(row.names=rownames(exprs), exprs=exprs$val, rnaseq=rnaseq$val)
