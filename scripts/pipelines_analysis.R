@@ -12,6 +12,10 @@ source("plots_utils.R")
 # Load studies description file
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 
+# Define rnaseq type
+seq_type = "subread"; ymin = -8; laby="log2 CPM"
+#seq_type = "tophat"; ymin = -11; laby="log2 FPKM"
+
 # Define pipelines you want to analyze
 pipe_types <- c("brainarray", "max", "maxoverall", "mean", "scores", "random")
 #pipe_types <- c("brainarray", "bioconductor", "scores")
@@ -22,19 +26,19 @@ plot_type <- plot_types[1]
 
 # Define plot names based on current plot type
 if (plot_type=="all") {
-  barplot.name = "../plots/barPlots/all_barplot.pdf"
-  scatterplot.name = "../plots/scatterPlots/all_scatterplot.pdf"
-  diagnosticplot.name = "_all_diagnosticplot_"
+  barplot.name = paste("../plots/barPlots/all_barplot_", seq_type, ".pdf", sep="")
+  scatterplot.name = paste("../plots/scatterPlots/all_scatterplot_", seq_type, ".pdf", sep="")
+  diagnosticplot.name = paste("_all_diagnosticplot_", seq_type, "_", sep="")
 }
 if (plot_type=="onetoone") {
-  barplot.name = "../plots/barPlots/onetoone_barplot.pdf"
-  scatterplot.name = "../plots/scatterPlots/onetoone_scatterplot.pdf"
-  diagnosticplot.name = "_onetoone_diagnosticplot_"
+  barplot.name = paste("../plots/barPlots/onetoone_barplot_", seq_type, ".pdf", sep="")
+  scatterplot.name = paste("../plots/scatterPlots/onetoone_scatterplot_", seq_type, ".pdf", sep="")
+  diagnosticplot.name = paste("_onetoone_diagnosticplot_", seq_type, "_", sep="")
 }
 if (plot_type=="onetomany") {
-  barplot.name = "../plots/barPlots/onetomany_barplot.pdf"
-  scatterplot.name = "../plots/scatterPlots/onetomany_scatterplot.pdf"
-  diagnosticplot.name = "_onetomany_diagnosticplot_"
+  barplot.name = paste("../plots/barPlots/onetomany_barplot_", seq_type, ".pdf", sep="")
+  scatterplot.name = paste("../plots/scatterPlots/onetomany_scatterplot_", seq_type, ".pdf", sep="")
+  diagnosticplot.name = paste("_onetomany_diagnosticplot_", seq_type, "_", sep="")
 }
 
 # Create classes for storing pipelines results
@@ -50,9 +54,11 @@ for (i in 1:length(studies$ID)) {
     if (grepl("Illu", studies[i,]$platform) && pipe_type=="brainarray") {
     } else {
       if (pipe_type=="bioconductor") {
-        exprs <- read.table(paste("../arseq/", studies[i,]$ID, "_arseq_", "max", ".tsv", sep=""), header = TRUE, sep = "\t")
+        exprs <- read.table(paste("../arseq.", seq_type, "/", studies[i,]$ID, "_arseq_", seq_type, "_max", ".tsv", sep=""),
+                            header = TRUE, sep = "\t")
       } else {
-        exprs <- read.table(paste("../arseq/", studies[i,]$ID, "_arseq_", pipe_type, ".tsv", sep=""), header = TRUE, sep = "\t")
+        exprs <- read.table(paste("../arseq.", seq_type, "/", studies[i,]$ID, "_arseq_", seq_type, "_", pipe_type, ".tsv", sep=""),
+                            header = TRUE, sep = "\t")
       }        
       if (plot_type=="onetomany") {
         otmGenes <- read.table(paste("../general/onetomany_genes_", studies[i,]$platformAbbr, ".txt", sep=""), header = TRUE, sep = "\t")
@@ -96,9 +102,9 @@ for (i in 1:length(pipelines)) {
   # Ugly constants, cause Illumina has really different X range
   # TODO: get max and min automatically
   if (grepl("Illu", studies[studies$ID==pipelines[[i]]@dataset@ID,]$platform)) {
-    new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(6, 14, -7, 10))
+    new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(5, 14, ymin, 11), laby=laby)
   } else {
-    new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(2, 14, -7, 10))
+    new_plot <- scatterPlot(df, paste(pipelines[[i]]@dataset@ID,pipelines[[i]]@name), lin, cub, c(1, 14, ymin, 11), laby=laby)
   }
   scatterplot_list <- c(scatterplot_list, list(new_plot))
 

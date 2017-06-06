@@ -15,7 +15,8 @@ allsamples_exprs/
 allsamples_exprs_merged/
 arseq.tophat/
 arseq.subread/
-arseq_merged
+arseq_subread_merged/
+arseq_tophat_merged/
 scripts/.RData
 scripts/.Rhistory
 rnaseq/

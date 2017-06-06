@@ -41,8 +41,12 @@ for (pipe_type in pipe_types) {
 
 for (pipe_type in pipe_types) {
   exprs<-read.table(paste("../allsamples_exprs_merged/allsamples_exprs_merged_", pipe_type,".tsv", sep=""), header=TRUE)
-  rnaseq <- read.table("../rnaseq/rnaseq_data_processed_sum_long.tsv", sep="\t", header=TRUE)
+  rnaseq.tophat <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
+  rnaseq.subread <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread.tsv", sep="\t")
+  colnames(rnaseq.subread) <- colnames(rnaseq.tophat)
   
-  arseq <- mergeWithRNAseq(exprs, rnaseq, pdata.all, common_genes)
-  write.table(arseq, paste("../arseq_merged/arseq_merged_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
+  arseq <- mergeWithRNAseq(exprs, rnaseq.tophat, pdata.all, common_genes)
+  write.table(arseq, paste("../arseq_tophat_merged/arseq_tophat_merged_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
+  arseq <- mergeWithRNAseq(exprs, rnaseq.subread, pdata.all, common_genes)
+  write.table(arseq, paste("../arseq_subread_merged/arseq_subread_merged_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
 }

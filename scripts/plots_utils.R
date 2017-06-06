@@ -60,7 +60,7 @@ scatterPlot <- function(df, title, lin, cub, ranges, labx="log2 probeset intensi
                              plot.margin=unit(c(5,5,5,5),"mm"),
                              axis.text = element_text(size=18),
                              axis.title = element_text(size=16),
-                             plot.title = element_text(face="bold", size=17)))
+                             plot.title = element_text(face="bold", size=15)))
   
   p <- ggplot(data=df,aes(x=eset,y=rnaseq)) + 
     geom_point(alpha=0.3) +

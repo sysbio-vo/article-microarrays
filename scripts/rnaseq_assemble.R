@@ -83,3 +83,28 @@ rnaseq <- rnaseq[which(rownames(rnaseq) %in% SYMBOLs_EntrezID$SYMBOL), ]
 rnaseq <- rnaseq[order(match(rownames(rnaseq), SYMBOLs_EntrezID$SYMBOL)),]
 rownames(rnaseq) <- SYMBOLs_EntrezID$ENTREZID
 write.table(rnaseq, "../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_long.tsv", sep="\t", quote=FALSE)
+
+
+
+### Generate short files
+
+GSE58135.t <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
+GSE58135.s <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread.tsv", sep="\t")
+GSE60788 <- read.table("../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_long.tsv", sep="\t")
+
+rnaseq <- GSE58135.t
+rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
+rnaseq <- rnaseq[which(rnaseq>0.01), , drop = FALSE]
+rnaseq$val <- log(rnaseq$val, 2)
+write.table(rnaseq, "../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_short.tsv", sep="\t", quote=FALSE)
+
+rnaseq <- GSE58135.s
+rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
+rnaseq <- rnaseq[which(rnaseq>-6.643856), , drop = FALSE]
+write.table(rnaseq, "../rnaseq/GSE58135/GSE58135_rnaseq_subread_short.tsv", sep="\t", quote=FALSE)
+
+rnaseq <- GSE60788
+rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
+rnaseq <- rnaseq[which(rnaseq>0.01), , drop = FALSE]
+rnaseq$val <- log(rnaseq$val, 2)
+write.table(rnaseq, "../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_short.tsv", sep="\t", quote=FALSE)
