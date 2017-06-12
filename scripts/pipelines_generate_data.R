@@ -13,12 +13,12 @@ source("probes_utils.R")
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 common_genes <- read.table("../general/common_genes_list.txt", sep = "\t", header = TRUE)
 pipe_types <- c("max", "mean", "random", "maxoverall", "scores", "brainarray")
-pipe_type <- pipe_types[6]
+pipe_type <- pipe_types[1]
 
 # Reading rnaseq data
-rnaseq.tophat <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
-rnaseq.subread <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread.tsv", sep="\t")
-colnames(rnaseq.subread) <- colnames(rnaseq.tophat)
+rnaseq.tophat <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_short.tsv", sep="\t", header=TRUE)
+rnaseq.subread <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread_short.tsv", sep="\t")
+#colnames(rnaseq.subread) <- colnames(rnaseq.tophat)
 
 for (i in 1:length(studies$ID)) {
   if (grepl("Affy", studies[i,]$platform)) {
@@ -41,9 +41,9 @@ for (i in 1:length(studies$ID)) {
 
     write.table(exprs, paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_exprs_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
     
-    arseq <- mergeWithRNAseq(exprs, rnaseq.tophat, pdata, common_genes, "tophat") 
+    arseq <- mergeWithRNAseq(exprs, rnaseq.tophat, pdata, common_genes) 
     write.table(arseq, paste("../arseq.tophat/", studies[i,]$ID, "_arseq_tophat_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
-    arseq <- mergeWithRNAseq(exprs, rnaseq.subread, pdata, common_genes, "subread") 
+    arseq <- mergeWithRNAseq(exprs, rnaseq.subread, pdata, common_genes) 
     write.table(arseq, paste("../arseq.subread/", studies[i,]$ID, "_arseq_subread_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
   }
   if (pipe_type!="brainarray") {
@@ -120,9 +120,9 @@ for (i in 1:length(studies$ID)) {
       write.table(exprs, paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_exprs_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
     }
 
-    arseq <- mergeWithRNAseq(exprs, rnaseq.tophat, pdata, common_genes, "tophat") 
+    arseq <- mergeWithRNAseq(exprs, rnaseq.tophat, pdata, common_genes) 
     write.table(arseq, paste("../arseq.tophat/", studies[i,]$ID, "_arseq_tophat_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
-    arseq <- mergeWithRNAseq(exprs, rnaseq.subread, pdata, common_genes, "subread") 
+    arseq <- mergeWithRNAseq(exprs, rnaseq.subread, pdata, common_genes) 
     write.table(arseq, paste("../arseq.subread/", studies[i,]$ID, "_arseq_subread_", pipe_type, ".tsv", sep=""), sep="\t", quote=FALSE)
   }
 }  

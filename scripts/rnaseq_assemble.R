@@ -104,6 +104,12 @@ rnaseq <- rnaseq[which(rnaseq>-6.643856), , drop = FALSE]
 write.table(rnaseq, "../rnaseq/GSE58135/GSE58135_rnaseq_subread_short.tsv", sep="\t", quote=FALSE)
 
 rnaseq <- GSE60788
+studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
+pdata <- read.table(paste("../pdata/pdata_", studies[4,]$ID, ".tsv", sep=""), header=TRUE, sep="\t", stringsAsFactors = FALSE)
+pdata<-pdata[which(pdata$CancerType=="TNBC"),]
+pdata<-pdata[which(is.na(pdata$Outliers)),]
+rnaseq <- rnaseq[colnames(rnaseq) %in% pdata$SampleAccessionNumber]
+
 rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
 rnaseq <- rnaseq[which(rnaseq>0.01), , drop = FALSE]
 rnaseq$val <- log(rnaseq$val, 2)

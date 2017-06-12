@@ -1,7 +1,7 @@
 plots/
 raws/*
 !raws/047_20150203_Tchou_CAFs.zip
-!*.RData
+*RData
 preprocessed/*
 preprocessed/*.tar.gz
 general/*

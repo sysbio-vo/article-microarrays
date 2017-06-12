@@ -12,29 +12,22 @@ studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 common_genes <- read.table("../general/common_genes_list.txt", sep = "\t", header = TRUE)
 
 pdata <- read.table(paste("../pdata/pdata_", studies[4,]$ID, ".tsv", sep=""), header=TRUE, sep="\t", stringsAsFactors = FALSE)
-rnaseq <- read.table("../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_long.tsv", sep="\t")
-rnaseq <- rnaseq[rownames(rnaseq) %in% common_genes$ENTREZID, ]
+rnaseq <- read.table("../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_short.tsv", sep="\t")
+rnaseq <- rnaseq[rownames(rnaseq) %in% common_genes$ENTREZID, , drop=FALSE]
 
 rnaseq.back <- rnaseq
 arseq <- c()
 for (i in 1:length(pipe_types)) {
   exprs <- read.table(paste("../allsamples_exprs/", studies[4,]$ID, "_allsamples_exprs_", pipe_types[i], ".tsv", sep=""), header=TRUE)
-  rnaseq <- rnaseq.back
-
   exprs <- exprs[which(rownames(exprs) %in% rownames(rnaseq)),]
-  rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(exprs))),]
+  rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(exprs))), , drop=FALSE]
 
   pdata<-pdata[which(pdata$CancerType=="TNBC"),]
   pdata<-pdata[which(is.na(pdata$Outliers)),]
   exprs <- exprs[colnames(exprs) %in% pdata$SampleAccessionNumber]
-  rnaseq <- rnaseq[colnames(rnaseq) %in% pdata$SampleAccessionNumber]
-  
+
   exprs <- data.frame(val=rowMeans(exprs), row.names=rownames(exprs))
-  rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
-  rnaseq$val <- rnaseq$val+0.001
-  rnaseq$val <- log(rnaseq$val, 2)
   arseq <- c(arseq, list(data.frame(row.names=rownames(exprs), exprs=exprs$val, rnaseq=rnaseq$val)))
-  #write.table(arseq, paste("../arseq.self/", studies[i,]$ID, "_arseq_self_rnaseq_", pipe_types[i], ".tsv", sep=""), sep="\t", quote=FALSE)
 }
 
 ## Scatter and bar plots
@@ -62,7 +55,7 @@ for (i in 1:length(arseq)) {
   df <- data.frame(eset=eset, rnaseq=rnaseq)
   # Ugly constants, cause Illumina has really different X range
   # TODO: get max and min automatically
-  new_plot <- scatterPlot(df, pipe_types[i], lin, cub, c(5, 14, -11, 12))
+  new_plot <- scatterPlot(df, pipe_types[i], lin, cub, c(5, 14, -7, 12))
   scatterplot_list <- c(scatterplot_list, list(new_plot))
   
   # Correlation data frame
@@ -102,18 +95,13 @@ save_plot("../plots/barPlots/GSE60788_arseq_all_barplot.pdf", pl,
 
 ## Self: rnaseq vs rnaseq
 
-rnaseq.first <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
-rnaseq.second <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread.tsv", sep="\t")
+rnaseq.first <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_short.tsv", sep="\t", header=TRUE)
+rnaseq.second <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_subread_short.tsv", sep="\t")
 
-rnaseq.first <- rnaseq.first[rownames(rnaseq.first) %in% common_genes$ENTREZID, ]
-rnaseq.second <- rnaseq.second[rownames(rnaseq.second) %in% common_genes$ENTREZID, ]
+rnaseq.first <- rnaseq.first[rownames(rnaseq.first) %in% common_genes$ENTREZID, , drop=FALSE]
+rnaseq.second <- rnaseq.second[rownames(rnaseq.second) %in% common_genes$ENTREZID, , drop=FALSE]
 
-rnaseq.first <- rnaseq.first[order(match(rownames(rnaseq.first), rownames(rnaseq.second))),]
-
-rnaseq.first <- data.frame(val=rowMeans(rnaseq.first), row.names=rownames(rnaseq.first))
-rnaseq.second <- data.frame(val=rowMeans(rnaseq.second), row.names=rownames(rnaseq.second))
-rnaseq.first$val <- rnaseq.first$val+0.001
-rnaseq.first$val <- log(rnaseq.first$val, 2)
+rnaseq.first <- rnaseq.first[order(match(rownames(rnaseq.first), rownames(rnaseq.second))), , drop=FALSE]
 
 rnaseq <- rnaseq.first$val
 eset <- rnaseq.second$val
@@ -122,31 +110,21 @@ lin<-lm(rnaseq~eset)
 cub<-lm(rnaseq~eset+I(eset^2)+I(eset^3))  
 df <- data.frame(eset=eset, rnaseq=rnaseq)
 
-pl <- scatterPlot(df, "GSE58135 RNA-seq: tophat vs subread", lin, cub, c(-8, 11, -11, 11), labx="log2 CPM")
-save_plot("../plots/scatterPlots/GSE58135_tophat_vs_subread_scatterplot.pdf", pl,
+pl <- scatterPlot(df, "GSE58135 RNA-seq: tophat vs subread", lin, cub, c(-7, 11, -7, 11), labx="log2 CPM")
+save_plot("../plots/scatterPlots/GSE58135_tophat_vs_subread_scatterplot_new.pdf", pl,
           base_height=6,
           base_aspect_ratio=1)
 
 
 ######
 
-rnaseq.first <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_long.tsv", sep="\t", header=TRUE)
-rnaseq.second <- read.table("../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_long.tsv", sep="\t")
-rnaseq.second <- rnaseq.second[colnames(rnaseq.second) %in% pdata$SampleAccessionNumber]
+rnaseq.first <- read.table("../rnaseq/GSE58135/GSE58135_rnaseq_processed_sum_short.tsv", sep="\t", header=TRUE)
+rnaseq.second <- read.table("../rnaseq/GSE60788/GSE60788_rnaseq_processed_sum_short.tsv", sep="\t")
 
-rnaseq.second <- rnaseq.second[rownames(rnaseq.second) %in% common_genes$ENTREZID, ]
-rnaseq.first <- rnaseq.first[rownames(rnaseq.first) %in% rownames(rnaseq.second), ]
+rnaseq.second <- rnaseq.second[rownames(rnaseq.second) %in% common_genes$ENTREZID, , drop=FALSE]
+rnaseq.first <- rnaseq.first[rownames(rnaseq.first) %in% rownames(rnaseq.second), , drop=FALSE]
 
-rnaseq.first <- rnaseq.first[order(match(rownames(rnaseq.first), rownames(rnaseq.second))),]
-
-rnaseq.first <- data.frame(val=rowMeans(rnaseq.first), row.names=rownames(rnaseq.first))
-rnaseq.second <- data.frame(val=rowMeans(rnaseq.second), row.names=rownames(rnaseq.second))
-rnaseq.first <- rnaseq.first[which(rnaseq.first>0.001), , drop = FALSE]
-rnaseq.first$val <- log(rnaseq.first$val, 2)
-rnaseq.second <- rnaseq.second[rnaseq.second>0.001, , drop = FALSE]
-rnaseq.second$val <- log(rnaseq.second$val, 2)
-rnaseq.first <- rnaseq.first[rownames(rnaseq.first) %in% rownames(rnaseq.second), , drop = FALSE]
-rnaseq.second <- rnaseq.second[rownames(rnaseq.second) %in% rownames(rnaseq.first), , drop = FALSE]
+rnaseq.first <- rnaseq.first[order(match(rownames(rnaseq.first), rownames(rnaseq.second))), ,drop=FALSE]
 
 rnaseq <- rnaseq.first$val
 eset <- rnaseq.second$val
@@ -155,7 +133,7 @@ lin<-lm(rnaseq~eset)
 cub<-lm(rnaseq~eset+I(eset^2)+I(eset^3))  
 df <- data.frame(eset=eset, rnaseq=rnaseq)
 
-pl <- scatterPlot(df, "GSE58135 vs GSE60788 RNA-seq (tophat)", lin, cub, c(-11, 12, -11, 11))
+pl <- scatterPlot(df, "GSE58135 vs GSE60788 RNA-seq (tophat)", lin, cub, c(-7, 12, -7, 11))
 save_plot("../plots/scatterPlots/GSE58135_vs_GSE60788_rnaseq_tophat_scatterplot.pdf", pl,
           base_height=6,
           base_aspect_ratio=1)

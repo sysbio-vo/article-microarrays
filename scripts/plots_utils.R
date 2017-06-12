@@ -45,6 +45,7 @@ barPlot <- function(df) {
 }
 
 scatterPlot <- function(df, title, lin, cub, ranges, labx="log2 probeset intensity", laby="log2 FPKM") {
+  require(plyr)
   # TODO: replace the constants with passing arguments
   minx=ranges[1]
   maxx=ranges[2]

@@ -25,7 +25,7 @@ subsetNrenameRows <- function(exprs, probesetsID_EntrezID) {
   return(exprs)
 }
 
-mergeWithRNAseq <- function(exprs, rnaseq, pdata, common_genes, seq_type) {
+mergeWithRNAseq <- function(exprs, rnaseq, pdata, common_genes) {
   # Select only common genes for all the platforms and pipelines
   exprs <- exprs[rownames(exprs) %in% common_genes$ENTREZID,]
 
@@ -38,13 +38,8 @@ mergeWithRNAseq <- function(exprs, rnaseq, pdata, common_genes, seq_type) {
   exprs <- data.frame(val=rowMeans(exprs), row.names=rownames(exprs))
 
   # Select common genes with rna-seq
-  rnaseq <- rnaseq[rownames(rnaseq) %in% rownames(exprs),]
-  rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(exprs))),]
-  rnaseq <- data.frame(val=rowMeans(rnaseq), row.names=rownames(rnaseq))
-  if (seq_type=="tophat") {
-    rnaseq$val <- rnaseq$val+0.001
-    rnaseq$val <- log(rnaseq$val, 2)    
-  }
+  rnaseq <- rnaseq[rownames(rnaseq) %in% rownames(exprs), , drop=FALSE]
+  rnaseq <- rnaseq[order(match(rownames(rnaseq),rownames(exprs))), , drop=FALSE]
   # Assemble joint dataset
   arseq <- data.frame(row.names=rownames(exprs), exprs=exprs$val, rnaseq=rnaseq$val)
   return(arseq)

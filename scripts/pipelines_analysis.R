@@ -13,8 +13,8 @@ source("plots_utils.R")
 studies <- read.table("../general/studies.tsv", header = TRUE, sep = "\t")
 
 # Define rnaseq type
-seq_type = "subread"; ymin = -8; laby="log2 CPM"
-#seq_type = "tophat"; ymin = -11; laby="log2 FPKM"
+#seq_type = "subread"; ymin = -7; laby="log2 CPM"
+seq_type = "tophat"; ymin = -7; laby="log2 FPKM"
 
 # Define pipelines you want to analyze
 pipe_types <- c("brainarray", "max", "maxoverall", "mean", "scores", "random")
