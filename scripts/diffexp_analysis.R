@@ -110,33 +110,142 @@ venn.diagram(list(GSE65194 = degs.list.random[[1]]$ENTREZID, GSE19615 = degs.lis
 
 library(AIPS)
 library(Biobase)
-openVignette()
-data(mcgill.gq)
-mcgill.aips <- mclapply.AIPS(mcgill.gq$D,
-                             mcgill.gq$EntrezID)
-
-table(mcgill.aips$cl)/ncol(mcgill.aips$cl)
-save(mcgill.aips, file = paste("mcgill.aips.RData", sep=""))
-load("mcgill.aips.RData")
-
-brain.aips <- mclapply.AIPS(eset, rownames(eset))
-table(brain.aips$cl)/ncol(eset)
-
-table(mcgill.aips$cl[,1],brain.aips$cl[,1])
-
-
 data(aips.models)
 ## Get an example gene signature esr1 (estrogen)
-esr1.gs = aips.models[[1706]]$gs.bresat
-mcgill.ROI95.esr1.gs <- ROIq (mcgill.gq$D,
-                              mcgill.gq$EntrezID,
+#esr1.gs = aips.models[[1706]]$gs.bresat
+ind = 0
+for (i in 1:1733) {
+  if (aips.models[[i]]$gs.bresat$NAME == "CHARAFE_BREAST_CANCER_LUMINAL_VS_BASAL") {
+    ind = i
+  }
+}
+esr1.gs = aips.models[[ind]]$gs.bresat
+esr1.gs$DESCRIPTION
+
+esr1.list <- list()
+#pipe_types <- c("brainarray", "maxoverall", "mean", "scores", "random")
+pipe_types <- c("maxoverall", "mean", "scores", "random")
+i=4
+for (pipe_type in pipe_types) {
+  pdata <- read.table(paste("../pdata/combined_pdata.tsv"), header=TRUE, sep="\t", stringsAsFactors = FALSE)
+  eset<-read.table(paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_exprs_", pipe_type, ".tsv", sep=""), header=TRUE)
+  pdata <- pdata[pdata$SampleAccessionNumber %in% colnames(eset),]
+  pdata <- pdata[which(is.na(pdata$Outliers)),]
+  pdata <- pdata[which(pdata$CancerType != "Healthy"),]
+  #pdata <- pdata[which(pdata$CancerType != "Her2"),]
+  eset <- eset[,colnames(eset) %in% pdata$SampleAccessionNumber]
+  brain.ROI95.esr1.gs <- ROIq(eset, rownames(eset),
                               list(up=esr1.gs$ENTREZ$up,down=esr1.gs$ENTREZ$down))
-## Print a summary of all the assignments
-table(mcgill.ROI95.esr1.gs$cl)
+  esr1.list <- c(esr1.list, list(brain.ROI95.esr1.gs$cl))
+  print(table(brain.ROI95.esr1.gs$cl)/ncol(eset))
+} 
+
+for (i in 1:length(pipe_types)) {
+  t <- table(esr1.list[[i]], pdata$CancerType)
+  t[,2] <- t[,2] + t[,3]
+  t <- t[,-3]
+  colnames(t)[2] <- "Luminal"
+  fph <- t[1, 1] + t[1, 3] + t[2, 2] + t[3, 2]
+  tnh <- t[2, 3]
+  rh <- fph / (fph + tnh); 
+  fpl <- t[2, 1] + t[2, 2] + t[1, 3] + t[3, 3]
+  tnl <- t[1, 2]
+  rl <- fpl / (fpl + tnl); 
+  #print(c(rh, rl))
+  print(rh+rl)
+  #print(t)
+}
 
 
-brain.ROI95.esr1.gs <- ROIq(eset, rownames(eset),
-                            list(up=esr1.gs$ENTREZ$up,down=esr1.gs$ENTREZ$down))
-table(brain.ROI95.esr1.gs$cl)
+table(esr1.list[[1]], pdata$Grade)
 
-colnames(mcgill.gq$D)
+no_illu = TRUE
+for (pipe_type in pipe_types) {
+  eset <- read.table(paste("../allsamples_exprs_merged/allsamples_exprs_merged_", pipe_type, ".tsv", sep=""),
+                     stringsAsFactors = FALSE, header=TRUE)
+  pdata <-read.table(paste("../pdata/combined_pdata.tsv"), header=TRUE, sep="\t")
+  pdata <- pdata[pdata$SampleAccessionNumber %in% colnames(eset),]
+  pdata <- pdata[which(is.na(pdata$Outliers)),]
+  if (no_illu) {
+    pdata <- pdata[which(pdata$DataSetAccesionNumber != "GSE60785"),]
+  }
+  eset <- eset[,colnames(eset) %in% pdata$SampleAccessionNumber]
+  brain.ROI95.esr1.gs <- ROIq(eset, rownames(eset),
+                              list(up=esr1.gs$ENTREZ$up,down=esr1.gs$ENTREZ$down))
+  esr1.list <- c(esr1.list, list(brain.ROI95.esr1.gs$cl))
+  print(table(brain.ROI95.esr1.gs$cl)/ncol(eset))
+}
+
+### GENEFU
+library(genefu)
+library(xtable)
+library(rmeta)
+library(Biobase)
+library(caret)
+
+i = 3
+#pipe_types <- c("brainarray", "maxoverall", "mean", "scores", "random")
+pipe_types <- c("maxoverall", "random")
+pipe_type = pipe_types[1]
+for (pipe_type in pipe_types) {
+pdata <- read.table(paste("../pdata/combined_pdata.tsv"), header=TRUE, sep="\t", stringsAsFactors = FALSE)
+eset<-read.table(paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_exprs_", pipe_type, ".tsv", sep=""), header=TRUE)
+pdata <- pdata[pdata$SampleAccessionNumber %in% colnames(eset),]
+pdata <- pdata[which(is.na(pdata$Outliers)),]
+pdata <- pdata[which(pdata$CancerType != "Healthy"),]
+#pdata <- pdata[which(pdata$CancerType != "Her2"),]
+eset <- eset[,colnames(eset) %in% pdata$SampleAccessionNumber]
+
+#EntrezID_Symbol<-select(org.Hs.eg.db, rownames(eset), c("SYMBOL", "GENENAME"))
+#annot <- data.frame(EntrezGene.ID = rownames(eset), Gene.Symbol = EntrezID_Symbol$SYMBOL)
+
+annot <- data.frame(EntrezGene.ID = rownames(eset))
+rownames(annot) <- annot$probe <- annot$EntrezGene.ID
+
+pam50 <- molecular.subtyping(sbt.model = "pam50", data = t(eset),
+                             annot = annot, do.mapping = TRUE)
+#table(pam50$subtype)
+
+scmod2 <- molecular.subtyping(sbt.model = "AIMS", data = t(eset),
+                              annot = annot,do.mapping = TRUE)
+#table(scmod2$subtype)
+
+Basals<-names(which(scmod2$subtype == "ER-/HER2-"))
+#Select samples pertaining to HER2 Subtype
+HER2s<-names(which(scmod2$subtype == "HER2+"))
+#Select samples pertaining to Luminal Subtypes
+LuminalB<-names(which(scmod2$subtype == "ER+/HER2- High Prolif"))
+LuminalA<-names(which(scmod2$subtype == "ER+/HER2- Low Prolif"))
+scmod2$subtype[LuminalB]<-"LumB"
+scmod2$subtype[LuminalA]<-"LumA"
+scmod2$subtype[Basals]<-"Basal"
+scmod2$subtype[HER2s]<-"Her2"
+
+#table(pam50$subtype)
+#table(scmod2$subtype)
+
+pdata[pdata$CancerType=="lumA",]$CancerType <- "LumA"
+pdata[pdata$CancerType=="Luminal B",]$CancerType <- "LumB"
+pdata[pdata$CancerType=="TNBC",]$CancerType <- "Basal"
+if (length(which(pam50$subtype == "Normal")) > 0) {
+  ind = which(pam50$subtype == "Normal")
+  pam50$subtype <- pam50$subtype[-ind]
+  scmod2$subtype <- scmod2$subtype[-ind]
+  pdata <- pdata[-ind,]
+  eset <- eset[,-ind]
+}
+pam50$subtype <- as.character(pam50$subtype)
+confusionMatrix(pam50$subtype, scmod2$subtype)
+confusionMatrix(pam50$subtype, pdata$CancerType)
+
+### pamr
+library(pamr)
+#pamr.data <- list(x = as.matrix(eset), y = t(pdata$CancerType), geneid=t(rownames(eset)))
+pamr.data <- list(x = as.matrix(eset), y = t(pam50$subtype), geneid=t(rownames(eset)))
+train <- pamr.train(pamr.data)
+results <- pamr.cv(train, pamr.data)
+pamr.confusion(results, threshold=4.0)
+#fdr.obj <- pamr.fdr(train, pamr.data)
+#pamr.plotfdr(fdr.obj)
+
+}
