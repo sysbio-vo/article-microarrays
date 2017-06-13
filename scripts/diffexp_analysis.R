@@ -183,10 +183,13 @@ library(rmeta)
 library(Biobase)
 library(caret)
 
-i = 3
-#pipe_types <- c("brainarray", "maxoverall", "mean", "scores", "random")
-pipe_types <- c("maxoverall", "random")
+accu <- data.frame(study=1:19, pipe_type=1:19, accuracy=1:19)
+
+i = 1
+pipe_types <- c("brainarray", "maxoverall", "mean", "scores", "random")
+#pipe_types <- c("maxoverall", "mean", "scores", "random")
 pipe_type = pipe_types[1]
+j = 1
 for (pipe_type in pipe_types) {
 pdata <- read.table(paste("../pdata/combined_pdata.tsv"), header=TRUE, sep="\t", stringsAsFactors = FALSE)
 eset<-read.table(paste("../allsamples_exprs/", studies[i,]$ID, "_allsamples_exprs_", pipe_type, ".tsv", sep=""), header=TRUE)
@@ -206,46 +209,85 @@ pam50 <- molecular.subtyping(sbt.model = "pam50", data = t(eset),
                              annot = annot, do.mapping = TRUE)
 #table(pam50$subtype)
 
-scmod2 <- molecular.subtyping(sbt.model = "AIMS", data = t(eset),
+aims <- molecular.subtyping(sbt.model = "AIMS", data = t(eset),
                               annot = annot,do.mapping = TRUE)
-#table(scmod2$subtype)
+#table(aims$subtype)
 
-Basals<-names(which(scmod2$subtype == "ER-/HER2-"))
-#Select samples pertaining to HER2 Subtype
-HER2s<-names(which(scmod2$subtype == "HER2+"))
-#Select samples pertaining to Luminal Subtypes
-LuminalB<-names(which(scmod2$subtype == "ER+/HER2- High Prolif"))
-LuminalA<-names(which(scmod2$subtype == "ER+/HER2- Low Prolif"))
-scmod2$subtype[LuminalB]<-"LumB"
-scmod2$subtype[LuminalA]<-"LumA"
-scmod2$subtype[Basals]<-"Basal"
-scmod2$subtype[HER2s]<-"Her2"
+l <- c("Basal", "Her2", "Normal", "LumA", "LumB")
+aims$subtype <- factor(aims$subtype)
+levels(aims$subtype) <- c(levels(aims$subtype), l[-which(levels(aims$subtype) %in% l)])
 
-#table(pam50$subtype)
-#table(scmod2$subtype)
+pam50$subtype <- factor(pam50$subtype)
+levels(pam50$subtype) <- c(levels(pam50$subtype), l[-which(levels(pam50$subtype) %in% l)])
 
-pdata[pdata$CancerType=="lumA",]$CancerType <- "LumA"
-pdata[pdata$CancerType=="Luminal B",]$CancerType <- "LumB"
 pdata[pdata$CancerType=="TNBC",]$CancerType <- "Basal"
-if (length(which(pam50$subtype == "Normal")) > 0) {
-  ind = which(pam50$subtype == "Normal")
-  pam50$subtype <- pam50$subtype[-ind]
-  scmod2$subtype <- scmod2$subtype[-ind]
-  pdata <- pdata[-ind,]
-  eset <- eset[,-ind]
-}
-pam50$subtype <- as.character(pam50$subtype)
-confusionMatrix(pam50$subtype, scmod2$subtype)
-confusionMatrix(pam50$subtype, pdata$CancerType)
+pdata$CancerType <- factor(pdata$CancerType)
+levels(pdata$CancerType) <- c(levels(pdata$CancerType), "Normal")
+
+a <- confusionMatrix(pam50$subtype, aims$subtype)$overall[1] +
+     confusionMatrix(pam50$subtype, pdata$CancerType)$overall[1] +
+     confusionMatrix(aims$subtype, pdata$CancerType)$overall[1]
+accu[j,]$study <- as.character(studies[i,]$ID)
+accu[j,]$pipe_type = pipe_type
+accu[j,]$accuracy = as.numeric(a/3)
+j = j+1
 
 ### pamr
-library(pamr)
+#library(pamr)
 #pamr.data <- list(x = as.matrix(eset), y = t(pdata$CancerType), geneid=t(rownames(eset)))
-pamr.data <- list(x = as.matrix(eset), y = t(pam50$subtype), geneid=t(rownames(eset)))
-train <- pamr.train(pamr.data)
-results <- pamr.cv(train, pamr.data)
-pamr.confusion(results, threshold=4.0)
+#pamr.data <- list(x = as.matrix(eset), y = t(pam50$subtype), geneid=t(rownames(eset)))
+#train <- pamr.train(pamr.data)
+#results <- pamr.cv(train, pamr.data)
+#pamr.confusion(results, threshold=4.0)
 #fdr.obj <- pamr.fdr(train, pamr.data)
 #pamr.plotfdr(fdr.obj)
+}
+save(accu, file = paste("accu.RData", sep=""))
 
+accu_merged <- data.frame(study=1:5, pipe_type=1:5, accuracy=1:5)
+j = 1
+no_illu = TRUE
+pipe_types <- c("brainarray", "maxoverall", "mean", "scores", "random")
+for (pipe_type in pipe_types) {
+  eset <- read.table(paste("../allsamples_exprs_merged/allsamples_exprs_merged_", pipe_type, ".tsv", sep=""),
+                     stringsAsFactors = FALSE, header=TRUE)
+  pdata <-read.table(paste("../pdata/combined_pdata.tsv"), header=TRUE, sep="\t", 
+                     stringsAsFactors = FALSE)
+  pdata <- pdata[pdata$SampleAccessionNumber %in% colnames(eset),]
+  pdata <- pdata[which(is.na(pdata$Outliers)),]
+  if (no_illu) {
+    pdata <- pdata[which(pdata$DataSetAccesionNumber != "GSE65194"),]
+  }
+  eset <- eset[,colnames(eset) %in% pdata$SampleAccessionNumber]
+
+  annot <- data.frame(EntrezGene.ID = rownames(eset))
+  rownames(annot) <- annot$probe <- annot$EntrezGene.ID
+  
+  pam50 <- molecular.subtyping(sbt.model = "pam50", data = t(eset),
+                               annot = annot, do.mapping = TRUE)
+  #table(pam50$subtype)
+  
+  aims <- molecular.subtyping(sbt.model = "AIMS", data = t(eset),
+                              annot = annot,do.mapping = TRUE)
+  #table(aims$subtype)
+  
+  l <- c("Basal", "Her2", "Normal", "LumA", "LumB")
+  aims$subtype <- factor(aims$subtype)
+  levels(aims$subtype) <- c(levels(aims$subtype), l[-which(levels(aims$subtype) %in% l)])
+  
+  pam50$subtype <- factor(pam50$subtype)
+  levels(pam50$subtype) <- c(levels(pam50$subtype), l[-which(levels(pam50$subtype) %in% l)])
+  
+  pdata[pdata$CancerType=="TNBC",]$CancerType <- "Basal"
+  pdata$CancerType <- factor(pdata$CancerType)
+  levels(pdata$CancerType) <- c(levels(pdata$CancerType), "Normal")
+  
+  a <- confusionMatrix(pam50$subtype, aims$subtype)$overall[1] +
+    confusionMatrix(pam50$subtype, pdata$CancerType)$overall[1] +
+    confusionMatrix(aims$subtype, pdata$CancerType)$overall[1]
+  accu_merged[j,]$study = "all"
+  accu_merged[j,]$pipe_type = pipe_type
+  accu_merged[j,]$accuracy = as.numeric(a/3)
+  j = j+1
+  
 }
