@@ -20,6 +20,20 @@ library(ggfortify)
 library(cowplot)
 library(ArrayExpress)
 
+
+aeData = getAE("E-GEOD-14722", type = 'raw')
+
+> install.packages("http://mbni.org/customcdf/22.0.0/entrezg.download/pd.hgu133a.hs.entrezg_22.0.0.tar.gz", repos = NULL)
+
+> install.packages("http://mbni.org/customcdf/22.0.0/entrezg.download/pd.hgu133b.hs.entrezg_22.0.0.tar.gz", repos = NULL)
+
+> z <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
+
+> fllst <- split(aeData$rawFiles, pData(z)$Array.Design.REF)
+
+> pkglst <- c("pd.hgu133b.hs.entrezg","pd.hgu133a.hs.entrezg")
+> affyData <- lapply(1:2, function(x) read.celfiles(filenames = fllst[[x]], pkgname = pkglst[x]))
+
 setwd('/home/sashko/a/r/article-microarrays-sashko')
 
 rawspath = 'raws/affymetrix'
@@ -65,21 +79,26 @@ aeData = getAE(
 # read ArrayExpress phenodata from sdrf file
 aepd <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
 
+rowNames = rownames(aepd)
+
 # merge ArrayExpress phenodata with IGEA phenodata
 pd = merge(pData(aepd), igea, all.x = TRUE, by.x = 'Source.Name', by.y = 'Sample.Name')
 
-View(pd)
-affyData = ReadAffy(phenoData=pd,
-                    sampleNames=pd$Sample.Name,
-                    filenames=pd$Array.Data.File,
-                    celfile.path=paste("../raws/",
+rownames(pd) = rowNames
+
+
+
+
+affyData = ReadAffy(phenoData=aepd,
+                    sampleNames=aepd$Sample.Name,
+                    filenames=aepd$Array.Data.File,
+                    celfile.path=paste("raws/affymetrix/",
                                        studies[i,]$accession, sep=""))
 
+pData(z)$Array.Design.REF
 
 
-
-
-fllst <- split(aeData$rawFiles, pData(aepd)$Array.Design.REF)
+fllst <- split(aeData$rawFiles, pData(z)$Array.Design.REF)
 
 pkglst <- c("pd.hgu133b.hs.entrezg","pd.hgu133a.hs.entrezg")
 affyData <- lapply(1:2, function(x) read.celfiles(
@@ -105,7 +124,7 @@ if (class(affyData) != 'list'){
 for (j in 1:length(affyData)){
     current_affyData = affyData[[j]]
     pdata = pData(current_affyData)
-
+    
     filename = paste(pdatapath, studies$accession[[i]], '_', j, '.tsv', sep='')
     write.table(
         pdata,
@@ -119,58 +138,59 @@ for (j in 1:length(affyData)){
 # Run python script to merge ArrayExpress phenodata with IGEA one
 # ...
 
-    i = 1
-    # set path to raw files
-    current_path = paste(rawspath, '/', studies$accession[[i]], sep='')
-    if (! dir.exists(current_path)){
-        dir.create(current_path)
-    }
-    # read experiment with ArrayExpress to obtain phenodata
-    # if you have it already, comment this command and uncomment next two
-    # affyData = ArrayExpress(
-    #     studies$accession[[i]],
-    #     path=current_path,
-    #     save=TRUE,
-    #     full = TRUE
-    # )
+i = 1
 
-    affyData = ReadAffy(
-        phenoData=pd,
-        sampleNames=pd@data$Hybridization.Name,
-        filenames=pd@data$Array.Data.File,
-        celfile.path=paste(rawspath, studies$accession[[i]], sep="/")
-    )
+# set path to raw files
+current_path = paste(rawspath, '/', studies$accession[[i]], sep='')
+if (! dir.exists(current_path)){
+    dir.create(current_path)
+}
+# read experiment with ArrayExpress to obtain phenodata
+# if you have it already, comment this command and uncomment next two
+# affyData = ArrayExpress(
+#     studies$accession[[i]],
+#     path=current_path,
+#     save=TRUE,
+#     full = TRUE
+# )
 
-    # for (j in 1:length(affyData)){
-        current_affyData = affyData[[j]]
-        current_affyData@annotation
-        class(pd.hg.u133a)
+affyData = ReadAffy(
+    phenoData=pd,
+    sampleNames=pd@data$Hybridization.Name,
+    filenames=pd@data$Array.Data.File,
+    celfile.path=paste(rawspath, studies$accession[[i]], sep="/")
+)
 
-        class(hgu133bhsentrezg)
+# for (j in 1:length(affyData)){
+current_affyData = affyData[[j]]
+current_affyData@annotation
+class(pd.hg.u133a)
 
-        eset = rma(current_affyData)
-        library(hgu133bhsentrezg.db)
-        current_affyData@annotation = "pd.hgu133b.hs.entrezg"
-        eset.br = rma(current_affyData)
+class(hgu133bhsentrezg)
 
-
-    # }
+eset = rma(current_affyData)
+library(hgu133bhsentrezg.db)
+current_affyData@annotation = "pd.hgu133b.hs.entrezg"
+eset.br = rma(current_affyData)
 
 
+# }
 
 
 
-    # Affymetrix probesets
-    #affyData@cdfName <- "HG-U133_Plus_2"
-    #affyData@cdfName <- "HuGene-1_0-st-v1"
-    # eset = rma(affyData)
-    # Brainarray probesets. Change according to Affymetrix platform of the dataset
-    affyData@cdfName <- "hgu133bhsentrezgcdf"
-    eset.br = rma(affyData)
-    eset.br@annotation
-    # Save affy and brain expression sets
-    write.table(exprs(eset), paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
-    write.table(exprs(eset.br), paste(prepath, '/', studies$accession[[i]], "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
+
+
+# Affymetrix probesets
+#affyData@cdfName <- "HG-U133_Plus_2"
+#affyData@cdfName <- "HuGene-1_0-st-v1"
+# eset = rma(affyData)
+# Brainarray probesets. Change according to Affymetrix platform of the dataset
+affyData@cdfName <- "hgu133bhsentrezgcdf"
+eset.br = rma(affyData)
+eset.br@annotation
+# Save affy and brain expression sets
+write.table(exprs(eset), paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
+write.table(exprs(eset.br), paste(prepath, '/', studies$accession[[i]], "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
 
 
 
@@ -253,7 +273,7 @@ ReadAffy2 <- function (..., filenames = character(0), widget = getOption("BioC")
     l <- AllButCelsForReadAffy(..., filenames = filenames, widget = widget,
                                celfile.path = celfile.path, sampleNames = sampleNames,
                                phenoData = phenoData, description = description)
-
+    
     ret <- read.affybatch(filenames = l$filenames, phenoData = l$phenoData,
                           description = l$description, notes = notes, compress = compress,
                           rm.mask = rm.mask, rm.outliers = rm.outliers, rm.extra = rm.extra,
