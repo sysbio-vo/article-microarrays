@@ -20,13 +20,18 @@
 #' @examples
 #' tmp.path <- install.brainarray("hgu133a", version = "18.0.0", type = "ensg")
 #' print(tmp.path)
+#' 
+#' 
+#' 
 #' @export
 
 # Use a package (e.g. digest) to read the brainarray package and avoid most
 # hardcoded functionality of this function!
 
+
+
 install.brainarray <- function(array,
-                               version = "19.0.0",
+                               version = "22.0.0",
                                type = "entrezg",
                                force.reinstall = FALSE,
                                force.download = FALSE,
@@ -35,9 +40,10 @@ install.brainarray <- function(array,
   #array <- "hgu133plus2"
   #array <- "hugene10st"
   #force.reinstall <- TRUE; force.download <- TRUE; use.temp.dir <- TRUE
-
+  print(array)
   # Construct the file names used
   files <- paste0(array, "hs", type, c("cdf_", "probe_", ".db_"), version, ".tar.gz")
+  
 
   # Load or install if not installed
   package.name <- paste0(array, "hs", type, c("cdf", "probe", ".db"))
@@ -73,10 +79,11 @@ install.brainarray <- function(array,
 
       # Create the dir
       dir.create(path = path, recursive = TRUE, showWarnings = FALSE)
-
+      
       # Download the files if they are not already
       if (!file.exists(file.path(path, files[i])) | force.download) {
-        download.file(url = file.path(base.url, files[i]),
+          
+          download.file(url = file.path(base.url, files[i]),
                       destfile = file.path(path, files[i]))
       }
 
@@ -94,5 +101,6 @@ install.brainarray <- function(array,
 }
 
 
+#install.brainarray("hgu133plus2")
 
 
