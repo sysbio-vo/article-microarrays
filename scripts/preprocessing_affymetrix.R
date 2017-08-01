@@ -20,7 +20,8 @@ library(ggfortify)
 library(cowplot)
 library(ArrayExpress)
 
-setwd('/home/sashko/a/r/article-microarrays-sashko')
+setwd('/home/rstudio/r/article-microarrays')
+getwd()
 
 rawspath = 'raws/affymetrix'
 prepath = 'preprocessed/affymetrix'
@@ -36,143 +37,60 @@ igea = read.table('igea_tsv/samples.tsv',header = TRUE, sep = '\t', fill = TRUE)
 
 # install cdf annotation files for all listed microarray platforms
 for (array in levels(studies$platformAbbr)){
-    install.brainarray(array)
+  install.brainarray(array)
 }
 
-
-i = 1
+i = 4
 
 current_path = paste(rawspath, '/', studies$accession[[i]], sep='')
 if (! dir.exists(current_path)){
-    dir.create(current_path)
+  dir.create(current_path)
 }
-# read experiment with ArrayExpress to obtain phenodata
-# if you have it already, comment this command and uncomment next two
-# affyData = ArrayExpress(
-#     studies$accession[[i]],
-#     path=current_path,
-#     save=TRUE,
-#     full = TRUE
-# )
-# read experiment locally if already downloaded
-aeData = getAE(
-    studies$accession[[i]],
-    path = current_path,
-    sourcedir=current_path,
-    local=TRUE,
-    type = 'raw')
 
-# read ArrayExpress phenodata from sdrf file
-aepd <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
+
+aeData = getAE(
+  studies$accession[[i]],
+  path = current_path,
+  sourcedir=current_path,
+  # local = TRUE,
+  type = 'raw')
+
+
+
+z <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
+
 
 # merge ArrayExpress phenodata with IGEA phenodata
-pd = merge(pData(aepd), igea, all.x = TRUE, by.x = 'Source.Name', by.y = 'Sample.Name')
+pd = merge(z@data, igea, all.x = TRUE, by.x = 'Source.Name', by.y = 'Sample.Name')
 
-View(pd)
+rownames(pd) = pd$Array.Data.File
+
+nrow(pd)
+
+
+pd$Experiment
+
+
 affyData = ReadAffy(phenoData=pd,
-                    sampleNames=pd$Sample.Name,
-                    filenames=pd$Array.Data.File,
-                    celfile.path=paste("../raws/",
-                                       studies[i,]$accession, sep=""))
+                           sampleNames=pd$Sample.Name,
+                           filenames=pd$Array.Data.File,
+                           celfile.path=paste("raws/affymetrix/",
+                                              pd["Experiment"][[1]],
+                                              sep="")
+)
 
 
+affyData@cdfName <- paste(studies$platformAbbr[[i]], 'hsentrezgcdf', sep="")
+nrow(affyData)
+
+affyData.rma = rma(affyData)
+nrow(exprs(affyData.rma))
 
 
-
-fllst <- split(aeData$rawFiles, pData(aepd)$Array.Design.REF)
-
-pkglst <- c("pd.hgu133b.hs.entrezg","pd.hgu133a.hs.entrezg")
-affyData <- lapply(1:2, function(x) read.celfiles(
-    filenames = fllst[[x]],
-    pkgname = pkglst[x]))
-affyData
-
-affyEsets <- lapply(affyData, rma, target = "mps1")
-
-r = oligo::rma(affyData[[1]])
-r@annotation
-
-
-
-
-if (class(affyData) != 'list'){
-    affyData = c(affyData)
-}
-
-# for each microarray platform in experiment
-# save phenoData to tsv to be further updated
-# with IGEA data
-for (j in 1:length(affyData)){
-    current_affyData = affyData[[j]]
-    pdata = pData(current_affyData)
-
-    filename = paste(pdatapath, studies$accession[[i]], '_', j, '.tsv', sep='')
-    write.table(
-        pdata,
-        file=filename,
-        quote=FALSE,
-        sep='\t'
-    )
-}
-
-#
-# Run python script to merge ArrayExpress phenodata with IGEA one
-# ...
-
-    i = 1
-    # set path to raw files
-    current_path = paste(rawspath, '/', studies$accession[[i]], sep='')
-    if (! dir.exists(current_path)){
-        dir.create(current_path)
-    }
-    # read experiment with ArrayExpress to obtain phenodata
-    # if you have it already, comment this command and uncomment next two
-    # affyData = ArrayExpress(
-    #     studies$accession[[i]],
-    #     path=current_path,
-    #     save=TRUE,
-    #     full = TRUE
-    # )
-
-    affyData = ReadAffy(
-        phenoData=pd,
-        sampleNames=pd@data$Hybridization.Name,
-        filenames=pd@data$Array.Data.File,
-        celfile.path=paste(rawspath, studies$accession[[i]], sep="/")
-    )
-
-    # for (j in 1:length(affyData)){
-        current_affyData = affyData[[j]]
-        current_affyData@annotation
-        class(pd.hg.u133a)
-
-        class(hgu133bhsentrezg)
-
-        eset = rma(current_affyData)
-        library(hgu133bhsentrezg.db)
-        current_affyData@annotation = "pd.hgu133b.hs.entrezg"
-        eset.br = rma(current_affyData)
-
-
-    # }
-
-
-
-
-
-    # Affymetrix probesets
-    #affyData@cdfName <- "HG-U133_Plus_2"
-    #affyData@cdfName <- "HuGene-1_0-st-v1"
-    # eset = rma(affyData)
-    # Brainarray probesets. Change according to Affymetrix platform of the dataset
-    affyData@cdfName <- "hgu133bhsentrezgcdf"
-    eset.br = rma(affyData)
-    eset.br@annotation
-    # Save affy and brain expression sets
-    write.table(exprs(eset), paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
-    write.table(exprs(eset.br), paste(prepath, '/', studies$accession[[i]], "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
-
-
+# Save affy and brain expression sets
+write.table(exprs(affyData.rma), paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
+t = read.table(paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep=""), sep="\t")
+t
 
 
 # QC

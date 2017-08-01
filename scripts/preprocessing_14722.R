@@ -1,7 +1,7 @@
 # Load HuGene and hgu133 BrainArray packages
 source("https://bioconductor.org/biocLite.R")
 
-
+biocLite('affycoretools')
 library(affycoretools)
 
 # library(hugene10sthsentrezgprobe)
@@ -20,21 +20,8 @@ library(ggfortify)
 library(cowplot)
 library(ArrayExpress)
 
-
-aeData = getAE("E-GEOD-14722", type = 'raw')
-
-> install.packages("http://mbni.org/customcdf/22.0.0/entrezg.download/pd.hgu133a.hs.entrezg_22.0.0.tar.gz", repos = NULL)
-
-> install.packages("http://mbni.org/customcdf/22.0.0/entrezg.download/pd.hgu133b.hs.entrezg_22.0.0.tar.gz", repos = NULL)
-
-> z <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
-
-> fllst <- split(aeData$rawFiles, pData(z)$Array.Design.REF)
-
-> pkglst <- c("pd.hgu133b.hs.entrezg","pd.hgu133a.hs.entrezg")
-> affyData <- lapply(1:2, function(x) read.celfiles(filenames = fllst[[x]], pkgname = pkglst[x]))
-
-setwd('/home/sashko/a/r/article-microarrays-sashko')
+setwd('/home/rstudio/r/article-microarrays')
+getwd()
 
 rawspath = 'raws/affymetrix'
 prepath = 'preprocessed/affymetrix'
@@ -50,16 +37,104 @@ igea = read.table('igea_tsv/samples.tsv',header = TRUE, sep = '\t', fill = TRUE)
 
 # install cdf annotation files for all listed microarray platforms
 for (array in levels(studies$platformAbbr)){
-    install.brainarray(array)
+  install.brainarray(array)
 }
+
 
 
 i = 1
 
 current_path = paste(rawspath, '/', studies$accession[[i]], sep='')
 if (! dir.exists(current_path)){
-    dir.create(current_path)
+  dir.create(current_path)
 }
+
+
+aeData = getAE("E-GEOD-14722", type = 'raw')
+
+aeData = getAE(
+  studies$accession[[i]],
+  path = current_path,
+  sourcedir=current_path,
+  local = TRUE,
+  type = 'raw')
+
+
+install.packages("http://mbni.org/customcdf/22.0.0/entrezg.download/pd.hgu133a.hs.entrezg_22.0.0.tar.gz", repos = NULL)
+
+install.packages("http://mbni.org/customcdf/22.0.0/entrezg.download/pd.hgu133b.hs.entrezg_22.0.0.tar.gz", repos = NULL)
+
+z <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
+zdf = z@data
+pdataHgu133a = zdf[zdf$Array.Design.REF =="A-AFFY-33",]
+pdataHgu133b = zdf[zdf$Array.Design.REF =="A-AFFY-34",]
+
+rowNames = rownames(z)
+
+# merge ArrayExpress phenodata with IGEA phenodata
+pd = merge(pdataHgu133a, igea, all.x = TRUE, by.x = 'Source.Name', by.y = 'Sample.Name')
+pd = merge(pdataHgu133b, igea, all.x = TRUE, by.x = 'Source.Name', by.y = 'Sample.Name')
+
+
+
+rownames(pd) = pd$Array.Data.File
+
+rownames(pd)
+
+
+affyDatahgu133a = ReadAffy(phenoData=pd,
+                    sampleNames=pdataHgu133a$Sample.Name,
+                    filenames=pdataHgu133a$Array.Data.File,
+                    celfile.path="raws/affymetrix/E-GEOD-14722/A")
+
+rownames(affyDatahgu133a)
+
+affyDatahgu133b = ReadAffy(phenoData=pd,
+                           sampleNames=pdataHgu133b$Sample.Name,
+                           filenames=pdataHgu133b$Array.Data.File,
+                           celfile.path="raws/affymetrix/E-GEOD-14722/B")
+
+affyDatahgu133a.rma = rma(affyDatahgu133a)
+affyDatahgu133b.rma = rma(affyDatahgu133b)
+
+
+affyDatahgu133a.rma.exprs = exprs(affyDatahgu133a.rma)
+affyDatahgu133b.rma.exprs = exprs(affyDatahgu133b.rma)
+
+ab = intersect(rownames(affyDatahgu133a.rma.exprs), rownames(affyDatahgu133b.rma.exprs))
+length(ab)
+
+class(affyDatahgu133a.rma.exprs)
+
+a.remove = affyDatahgu133a.rma.exprs[!rownames(affyDatahgu133a.rma.exprs) %in% ab, ]
+length(a.remove)
+
+aandb = rbind(a.remove, affyDatahgu133b.rma.exprs)
+
+difference =rowMeans(affyDatahgu133a.rma.exprs[ab,])-rowMeans(affyDatahgu133b.rma.exprs[ab,])
+difference[ordered()]
+
+
+write.table(t(pdataHgu133b$Array.Data.File), "partA.txt", sep=" ", row.names=FALSE,
+            col.names=FALSE, quote=FALSE)
+
+write.table(aandb, paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep=""), sep="\t", quote=FALSE)
+paste(prepath, '/', studies$accession[[i]], "_preprocessed_affymetrix.tsv", sep="")
+this = read.table("preprocessed/affymetrix/E-GEOD-14722_preprocessed_affymetrix.tsv", sep="\t")
+
+# fllst <- split(aeData$rawFiles, pData(z)$Array.Design.REF)
+# 
+# pkglst <- c("pd.hgu133b.hs.entrezg","pd.hgu133a.hs.entrezg")
+# 
+# 
+# affyData <- lapply(1:2, function(x) read.celfiles(filenames = fllst[[x]], pkgname = pkglst[x]))
+# 
+# affyData.rma = lapply(affyData, rma)
+
+
+
+
+
 # read experiment with ArrayExpress to obtain phenodata
 # if you have it already, comment this command and uncomment next two
 # affyData = ArrayExpress(
@@ -69,12 +144,6 @@ if (! dir.exists(current_path)){
 #     full = TRUE
 # )
 # read experiment locally if already downloaded
-aeData = getAE(
-    studies$accession[[i]],
-    path = current_path,
-    sourcedir=current_path,
-    local=TRUE,
-    type = 'raw')
 
 # read ArrayExpress phenodata from sdrf file
 aepd <- ArrayExpress:::readPhenoData(aeData$sdrf, aeData$path)
@@ -89,13 +158,6 @@ rownames(pd) = rowNames
 
 
 
-affyData = ReadAffy(phenoData=aepd,
-                    sampleNames=aepd$Sample.Name,
-                    filenames=aepd$Array.Data.File,
-                    celfile.path=paste("raws/affymetrix/",
-                                       studies[i,]$accession, sep=""))
-
-pData(z)$Array.Design.REF
 
 
 fllst <- split(aeData$rawFiles, pData(z)$Array.Design.REF)
@@ -107,9 +169,6 @@ affyData <- lapply(1:2, function(x) read.celfiles(
 affyData
 
 affyEsets <- lapply(affyData, rma, target = "mps1")
-
-r = oligo::rma(affyData[[1]])
-r@annotation
 
 
 
@@ -193,6 +252,7 @@ write.table(exprs(eset), paste(prepath, '/', studies$accession[[i]], "_preproces
 write.table(exprs(eset.br), paste(prepath, '/', studies$accession[[i]], "_preprocessed_brainarray.tsv", sep=""), sep="\t", quote=FALSE)
 
 
+eset = affyData.rma[[1]]
 
 
 # QC
@@ -206,12 +266,15 @@ pData(eset.br)$ScanDate <- pData(eset)$ScanDate
 #pData(eset)$ScanDate <- substr(pData(eset)$ScanDate, 1, 7)
 
 # Perform PCA
-pca = prcomp(t(exprs(eset)))
+affyDatahgu133a
+
+pca = prcomp(t(exprs(affyDatahgu133a)))
+
 pca.br = prcomp(t(exprs(eset.br)))
 
-title <- ggdraw() + draw_label(paste("Affymetrix Probesets Definitions.", studies[i,]$ID), fontface='bold')
-
-pl1 <- autoplot(pca, data = pData(eset), colour="Characteristics.condition.")
+title <- ggdraw() + draw_label(paste("Affymetrix Probesets Definitions.", studies[i,]$accession), fontface='bold')
+affyDatahgu133a@phenoData@data$Characteristics.condition.
+pl1 <- autoplot(pca, data = pData(eset), colour="")
 pl2 <- autoplot(pca, data = pData(eset), colour="ScanDate")
 pl <- plot_grid(pl1, pl2, ncol=2, align="hv")
 pl <- plot_grid(title, pl, ncol=1, rel_heights=c(0.1, 1))
